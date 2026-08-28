@@ -823,8 +823,8 @@
 
     .watcher-eye-scanner {
       position: relative;
-      width: 95px;
-      height: 95px;
+      width: 110px;
+      height: 110px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -846,64 +846,74 @@
       100% { transform: scale(2.4); opacity: 0; }
     }
 
-    .eye-outer {
-      width: 72px;
-      height: 72px;
+    .logo-scanner-wrapper {
+      width: 86px;
+      height: 86px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.98));
-      border: 2.5px solid var(--accent-blue);
-      box-shadow: 0 0 25px rgba(88, 166, 255, 0.45), inset 0 0 15px rgba(0, 243, 255, 0.25);
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
-      overflow: hidden;
-      animation: eyeContainerBlink 3.2s ease-in-out infinite;
+      box-shadow: 0 0 25px rgba(0, 243, 255, 0.45);
+      animation: logoScannerPulse 1.4s ease-in-out infinite alternate;
     }
 
-    @keyframes eyeContainerBlink {
-      0%, 46%, 54%, 100% { transform: scaleY(1); }
-      50% { transform: scaleY(0.08); } /* Blink! */
-    }
-
-    .eye-iris {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: radial-gradient(circle, var(--accent-purple), var(--accent-blue));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      box-shadow: 0 0 18px var(--accent-purple);
-      animation: eyeIrisScan 2.6s ease-in-out infinite alternate;
-    }
-
-    @keyframes eyeIrisScan {
-      0% { transform: translate(-11px, -2px); }
-      25% { transform: translate(11px, 2px); }
-      50% { transform: translate(-8px, 4px); }
-      75% { transform: translate(9px, -3px); }
-      100% { transform: translate(-11px, -2px); }
-    }
-
-    .eye-pupil {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: #000000;
-      box-shadow: inset 0 0 6px rgba(255, 255, 255, 0.9);
-      position: relative;
-    }
-
-    .eye-glint {
+    .logo-scanner-wrapper::before {
+      content: '';
       position: absolute;
-      top: 3px;
-      right: 3px;
-      width: 5px;
-      height: 5px;
+      inset: -4px;
       border-radius: 50%;
-      background: #ffffff;
+      background: conic-gradient(from 0deg, var(--accent-blue), var(--accent-purple), var(--accent-green), var(--accent-blue));
+      animation: rotateGlow 1.8s linear infinite;
+      z-index: 0;
+      filter: blur(4px);
+    }
+
+    .scanner-logo-img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      position: relative;
+      z-index: 1;
+      border: 1px solid var(--panel-border);
+      animation: logoEyeScan 3s ease-in-out infinite;
+    }
+
+    .scanner-laser-sweep {
+      position: absolute;
+      left: 5%;
+      width: 90%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--accent-blue), var(--accent-purple), transparent);
+      box-shadow: 0 0 12px var(--accent-blue);
+      z-index: 3;
+      border-radius: 50%;
+      animation: laserSweep 1.8s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes laserSweep {
+      0% { top: 12%; opacity: 0.2; }
+      50% { opacity: 1; }
+      100% { top: 84%; opacity: 0.2; }
+    }
+
+    @keyframes logoScannerPulse {
+      0% { transform: scale(0.98); }
+      100% { transform: scale(1.06); }
+    }
+
+    @keyframes logoEyeScan {
+      0% { transform: scale(1) translateX(0) translateY(0); }
+      20% { transform: scale(1) translateX(-5px) translateY(-2px); }
+      40% { transform: scale(1) translateX(5px) translateY(2px); }
+      48% { transform: scale(1, 1); }
+      50% { transform: scale(1, 0.1); } /* Blink! */
+      52% { transform: scale(1, 1); }
+      70% { transform: scale(1) translateX(-4px) translateY(2px); }
+      85% { transform: scale(1) translateX(4px) translateY(-2px); }
+      100% { transform: scale(1) translateX(0) translateY(0); }
     }
 
     .scanner-text {
@@ -1289,10 +1299,9 @@
             <div class="sonar-ring r1"></div>
             <div class="sonar-ring r2"></div>
             <div class="sonar-ring r3"></div>
-            <div class="eye-outer">
-              <div class="eye-iris">
-                <div class="eye-pupil"><div class="eye-glint"></div></div>
-              </div>
+            <div class="logo-scanner-wrapper">
+              <img src="/assets/logo.png" alt="Watcher Eye Logo" class="scanner-logo-img" />
+              <div class="scanner-laser-sweep"></div>
             </div>
           </div>
           <div class="scanner-text">⚡ ${escapeHtml(message)}</div>
