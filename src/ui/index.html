@@ -15,6 +15,16 @@
       --bg-dark: #0d1117;
       --panel-bg: rgba(22, 27, 34, 0.85);
       --panel-border: rgba(48, 54, 61, 0.8);
+      --subpanel-bg: #161b22;
+      --input-bg: #161b22;
+      --chip-bg: #161b22;
+      --table-header-bg: #161b22;
+      --code-bg: #0d1117;
+      --terminal-bg: #090d13;
+      --btn-sec-bg: #21262d;
+      --btn-sec-text: #f0f6fc;
+      --btn-sec-border: rgba(48, 54, 61, 0.8);
+      --btn-sec-hover: #30363d;
       --text-main: #c9d1d9;
       --text-bright: #f0f6fc;
       --text-muted: #8b949e;
@@ -28,11 +38,26 @@
       --font-mono: 'JetBrains Mono', monospace;
     }
 
+    /* Theme 1: Default Dark Modern */
+    body.theme-dark {
+      /* Uses :root defaults */
+    }
+
     /* Theme 2: Cyberpunk Neon */
     body.theme-neon {
       --bg-dark: #07080e;
       --panel-bg: rgba(15, 17, 26, 0.92);
       --panel-border: rgba(0, 243, 255, 0.35);
+      --subpanel-bg: #0e1224;
+      --input-bg: #090c18;
+      --chip-bg: #0e1224;
+      --table-header-bg: #0e1224;
+      --code-bg: #090c18;
+      --terminal-bg: #050710;
+      --btn-sec-bg: #121730;
+      --btn-sec-text: #ffffff;
+      --btn-sec-border: rgba(0, 243, 255, 0.35);
+      --btn-sec-hover: #1a2245;
       --text-main: #d8f0ff;
       --text-bright: #ffffff;
       --text-muted: #6e8fa8;
@@ -52,6 +77,16 @@
       --bg-dark: #020a04;
       --panel-bg: rgba(4, 18, 8, 0.94);
       --panel-border: rgba(0, 255, 102, 0.45);
+      --subpanel-bg: #06160a;
+      --input-bg: #020b04;
+      --chip-bg: #06160a;
+      --table-header-bg: #06160a;
+      --code-bg: #020b04;
+      --terminal-bg: #010602;
+      --btn-sec-bg: #08200e;
+      --btn-sec-text: #66ff99;
+      --btn-sec-border: rgba(0, 255, 102, 0.45);
+      --btn-sec-hover: #0e3015;
       --text-main: #00ff66;
       --text-bright: #66ff99;
       --text-muted: #1e7033;
@@ -102,28 +137,38 @@
       box-shadow: inset 0 0 20px rgba(0, 255, 102, 0.08), 0 0 18px rgba(0, 255, 102, 0.18) !important;
     }
 
-    /* Theme 4: Light Clean (Modo Claro) */
+    /* Theme 4: Light Clean (Modo Claro Premium) */
     body.theme-light {
-      --bg-dark: #f6f8fa;
-      --panel-bg: rgba(255, 255, 255, 0.95);
-      --panel-border: #d0d7de;
-      --text-main: #24292f;
-      --text-bright: #0969da;
-      --text-muted: #57606a;
-      --accent-blue: #0969da;
-      --accent-purple: #8250df;
-      --accent-green: #1a7f37;
-      --accent-yellow: #9a6700;
-      --accent-red: #cf222e;
-      --card-glow: 0 4px 20px rgba(140, 149, 159, 0.2);
+      --bg-dark: #f0f4f8;
+      --panel-bg: #ffffff;
+      --panel-border: #cbd5e1;
+      --subpanel-bg: #f8fafc;
+      --input-bg: #ffffff;
+      --chip-bg: #f1f5f9;
+      --table-header-bg: #f1f5f9;
+      --code-bg: #f8fafc;
+      --terminal-bg: #f8fafc;
+      --btn-sec-bg: #ffffff;
+      --btn-sec-text: #0f172a;
+      --btn-sec-border: #cbd5e1;
+      --btn-sec-hover: #f1f5f9;
+      --text-main: #334155;
+      --text-bright: #0f172a;
+      --text-muted: #64748b;
+      --accent-blue: #0284c7;
+      --accent-purple: #7c3aed;
+      --accent-green: #16a34a;
+      --accent-yellow: #ca8a04;
+      --accent-red: #dc2626;
+      --card-glow: 0 8px 24px rgba(148, 163, 184, 0.14);
       --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
       background-image: 
-        radial-gradient(at 50% 0%, rgba(9, 105, 218, 0.08) 0px, transparent 60%);
+        radial-gradient(at 50% 0%, rgba(2, 132, 199, 0.06) 0px, transparent 60%);
     }
 
     body.theme-light::before {
-      opacity: 0.15 !important;
+      opacity: 0.08 !important;
       mix-blend-mode: multiply !important;
     }
 
@@ -131,21 +176,93 @@
     body.theme-light input,
     body.theme-light textarea {
       background: #ffffff !important;
-      color: #24292f !important;
-      border-color: #d0d7de !important;
+      color: #0f172a !important;
+      border: 1px solid #cbd5e1 !important;
+    }
+
+    body.theme-light select option {
+      background: #ffffff !important;
+      color: #0f172a !important;
+    }
+
+    body.theme-light header {
+      background: rgba(255, 255, 255, 0.96) !important;
+      border-bottom: 1px solid #cbd5e1 !important;
     }
 
     body.theme-light .stat-card,
-    body.theme-light .panel,
+    body.theme-light .section-card,
     body.theme-light .modal-content {
-      box-shadow: 0 6px 24px rgba(140, 149, 159, 0.15) !important;
+      background: #ffffff !important;
+      border-color: #cbd5e1 !important;
+      box-shadow: 0 8px 24px rgba(148, 163, 184, 0.12) !important;
+    }
+
+    body.theme-light .graph-container {
+      background: #f8fafc !important;
+      border-color: #cbd5e1 !important;
+    }
+
+    body.theme-light .node-source {
+      background: linear-gradient(135deg, rgba(2, 132, 199, 0.1), rgba(124, 58, 237, 0.1)) !important;
+      border-color: #0284c7 !important;
+      box-shadow: 0 4px 16px rgba(2, 132, 199, 0.12) !important;
+    }
+
+    body.theme-light .target-chip {
+      background: #ffffff !important;
+      border-color: #cbd5e1 !important;
+      box-shadow: 0 2px 6px rgba(148, 163, 184, 0.1) !important;
+    }
+
+    body.theme-light .filter-bar {
+      background: #f1f5f9 !important;
+      border-color: #cbd5e1 !important;
+    }
+
+    body.theme-light th {
+      background: #f1f5f9 !important;
+      color: #475569 !important;
+      border-color: #cbd5e1 !important;
+    }
+
+    body.theme-light tr:hover td {
+      background: rgba(2, 132, 199, 0.04) !important;
+    }
+
+    body.theme-light td {
+      border-color: #e2e8f0 !important;
+      color: #334155 !important;
+    }
+
+    body.theme-light .code-block {
+      background: #f8fafc !important;
+      color: #0f172a !important;
+      border-color: #cbd5e1 !important;
+    }
+
+    body.theme-light #impactedCheckboxes {
+      background: #ffffff !important;
+      border-color: #cbd5e1 !important;
     }
 
     body.theme-light #testTabContent,
     body.theme-light #mdTextarea {
-      background: #f6f8fa !important;
-      color: #24292f !important;
-      border-color: #d0d7de !important;
+      background: #f8fafc !important;
+      color: #0f172a !important;
+      border-color: #cbd5e1 !important;
+    }
+
+    body.theme-light .btn-secondary {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border: 1px solid #cbd5e1 !important;
+      box-shadow: 0 2px 6px rgba(148, 163, 184, 0.1) !important;
+    }
+
+    body.theme-light .btn-secondary:hover {
+      background: #f1f5f9 !important;
+      border-color: #94a3b8 !important;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
