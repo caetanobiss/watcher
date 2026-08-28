@@ -760,13 +760,176 @@
       from { transform: translateX(120%); opacity: 0; }
       to { transform: translateX(0); opacity: 1; }
     }
+
+    /* Watcher Eye Scanner & Loading Animations */
+    .brand-logo-container {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.3s;
+    }
+
+    .brand-logo-container.is-scanning::before {
+      content: '';
+      position: absolute;
+      inset: -5px;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, var(--accent-blue), var(--accent-purple), var(--accent-green), var(--accent-blue));
+      animation: rotateGlow 1.6s linear infinite;
+      z-index: 0;
+      filter: blur(5px);
+    }
+
+    .brand-logo-container.is-scanning img {
+      animation: logoPulse 1.2s ease-in-out infinite alternate, logoEyeLook 2.8s ease-in-out infinite;
+      position: relative;
+      z-index: 1;
+    }
+
+    @keyframes rotateGlow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes logoPulse {
+      0% { transform: scale(1); filter: brightness(1); }
+      100% { transform: scale(1.08); filter: brightness(1.3) drop-shadow(0 0 15px var(--accent-blue)); }
+    }
+
+    @keyframes logoEyeLook {
+      0% { transform: scale(1) translateX(0) translateY(0); }
+      20% { transform: scale(1) translateX(-4px) translateY(-2px); }
+      40% { transform: scale(1) translateX(4px) translateY(2px); }
+      48% { transform: scale(1, 1); }
+      50% { transform: scale(1, 0.12); } /* Blink! */
+      52% { transform: scale(1, 1); }
+      70% { transform: scale(1) translateX(-3px) translateY(1px); }
+      85% { transform: scale(1) translateX(3px) translateY(-1px); }
+      100% { transform: scale(1) translateX(0) translateY(0); }
+    }
+
+    /* Scanner Widget for Loading States */
+    .watcher-scanner-widget {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.25rem;
+      padding: 3rem 1rem;
+      width: 100%;
+    }
+
+    .watcher-eye-scanner {
+      position: relative;
+      width: 95px;
+      height: 95px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sonar-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2px solid var(--accent-blue);
+      opacity: 0;
+      animation: sonarPing 2.2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+    }
+    .sonar-ring.r2 { animation-delay: 0.7s; border-color: var(--accent-purple); }
+    .sonar-ring.r3 { animation-delay: 1.4s; border-color: var(--accent-green); }
+
+    @keyframes sonarPing {
+      0% { transform: scale(0.5); opacity: 0.85; }
+      100% { transform: scale(2.4); opacity: 0; }
+    }
+
+    .eye-outer {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.98));
+      border: 2.5px solid var(--accent-blue);
+      box-shadow: 0 0 25px rgba(88, 166, 255, 0.45), inset 0 0 15px rgba(0, 243, 255, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      animation: eyeContainerBlink 3.2s ease-in-out infinite;
+    }
+
+    @keyframes eyeContainerBlink {
+      0%, 46%, 54%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(0.08); } /* Blink! */
+    }
+
+    .eye-iris {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--accent-purple), var(--accent-blue));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 0 18px var(--accent-purple);
+      animation: eyeIrisScan 2.6s ease-in-out infinite alternate;
+    }
+
+    @keyframes eyeIrisScan {
+      0% { transform: translate(-11px, -2px); }
+      25% { transform: translate(11px, 2px); }
+      50% { transform: translate(-8px, 4px); }
+      75% { transform: translate(9px, -3px); }
+      100% { transform: translate(-11px, -2px); }
+    }
+
+    .eye-pupil {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #000000;
+      box-shadow: inset 0 0 6px rgba(255, 255, 255, 0.9);
+      position: relative;
+    }
+
+    .eye-glint {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #ffffff;
+    }
+
+    .scanner-text {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-bright);
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      animation: textPulse 1.4s ease-in-out infinite alternate;
+    }
+
+    @keyframes textPulse {
+      0% { opacity: 0.55; }
+      100% { opacity: 1; }
+    }
   </style>
 </head>
 <body>
 
   <header>
     <div class="brand">
-      <img src="/assets/logo.png" alt="Watcher Octopus Logo" style="width: 78px; height: 78px; border-radius: 50%; border: 1px solid var(--panel-border); object-fit: cover; box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);" />
+      <div class="brand-logo-container" id="headerLogoContainer">
+        <img src="/assets/logo.png" alt="Watcher Octopus Logo" style="width: 78px; height: 78px; border-radius: 50%; border: 1px solid var(--panel-border); object-fit: cover; box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);" />
+      </div>
       <div style="display: flex; flex-direction: column; justify-content: center;">
         <div class="brand-title">Watcher</div>
         <div class="brand-subtitle">Multi-Engine Cross Impact Analyzer</div>
@@ -1108,6 +1271,35 @@
       });
     }
 
+    function setScannerLoading(isLoading) {
+      const headerLogo = document.getElementById('headerLogoContainer');
+      if (headerLogo) {
+        if (isLoading) {
+          headerLogo.classList.add('is-scanning');
+        } else {
+          headerLogo.classList.remove('is-scanning');
+        }
+      }
+    }
+
+    function getScannerWidgetHTML(message = 'Escaneando monorepo & git diff...') {
+      return `
+        <div class="watcher-scanner-widget">
+          <div class="watcher-eye-scanner">
+            <div class="sonar-ring r1"></div>
+            <div class="sonar-ring r2"></div>
+            <div class="sonar-ring r3"></div>
+            <div class="eye-outer">
+              <div class="eye-iris">
+                <div class="eye-pupil"><div class="eye-glint"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="scanner-text">⚡ ${escapeHtml(message)}</div>
+        </div>
+      `;
+    }
+
     // Run impact analysis
     async function runAnalysis() {
       const engine = document.getElementById('engineSelect').value;
@@ -1118,6 +1310,13 @@
 
       btn.innerHTML = `<span class="spinner"></span> <span>Analisando...</span>`;
       btn.disabled = true;
+
+      setScannerLoading(true);
+
+      const targetContainer = document.getElementById('targetNodesContainer');
+      if (targetContainer) {
+        targetContainer.innerHTML = getScannerWidgetHTML(`Watcher analisando grafo de dependências para [${engine}]...`);
+      }
 
       try {
         const res = await fetch('/api/analyze', {
@@ -1138,6 +1337,7 @@
       } finally {
         btn.innerHTML = `<span>⚡ Verifique Impactos</span>`;
         btn.disabled = false;
+        setScannerLoading(false);
       }
     }
 
@@ -1450,8 +1650,10 @@
       const tabContent = document.getElementById('testTabContent');
 
       container.style.display = 'flex';
-      tabsHeader.innerHTML = '<div style="color: var(--accent-blue); padding: 0.5rem;"><span class="spinner"></span> Executando testes RSpec em paralelo...</div>';
-      tabContent.innerHTML = '<div style="color: var(--text-muted); font-size: 0.9rem;">Aguarde o término da execução dos testes em paralelo...</div>';
+      tabsHeader.innerHTML = '<div style="color: var(--accent-blue); padding: 0.5rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 600;"><span class="spinner"></span> Executando testes RSpec em paralelo...</div>';
+      tabContent.innerHTML = getScannerWidgetHTML('Watcher executando testes RSpec em paralelo nas engines...');
+
+      setScannerLoading(true);
 
       if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
@@ -1471,13 +1673,15 @@
           notifyTestCompletion(currentTestResults);
         } else {
           tabsHeader.innerHTML = '<div style="color: var(--accent-red);">Erro ao executar testes.</div>';
-          tabContent.innerHTML = `<div style="color: var(--accent-red);">${escapeHtml(data.message || 'Erro desconhecido')}</div>`;
+          tabContent.innerHTML = `<div style="color: var(--accent-red); padding: 1.5rem;">${escapeHtml(data.message || 'Erro desconhecido')}</div>`;
           showToast('🔴 Erro nos Testes', data.message || 'Ocorreu um erro ao disparar o RSpec.', 'error');
         }
       } catch (err) {
         tabsHeader.innerHTML = '<div style="color: var(--accent-red);">Falha na requisição de testes.</div>';
-        tabContent.innerHTML = `<div style="color: var(--accent-red);">${escapeHtml(err.message)}</div>`;
+        tabContent.innerHTML = `<div style="color: var(--accent-red); padding: 1.5rem;">${escapeHtml(err.message)}</div>`;
         showToast('🔴 Erro de Conexão', err.message, 'error');
+      } finally {
+        setScannerLoading(false);
       }
     }
 
