@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Watcher - Multi-Engine Impact Analyzer</title>
+  <link rel="icon" type="image/png" href="/assets/logo.png">
+  <link rel="shortcut icon" type="image/png" href="/assets/logo.png">
+  <link rel="apple-touch-icon" href="/assets/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0d1117;
+      --panel-bg: rgba(22, 27, 34, 0.85);
+      --panel-border: rgba(48, 54, 61, 0.8);
+      --text-main: #c9d1d9;
+      --text-bright: #f0f6fc;
+      --text-muted: #8b949e;
+      --accent-blue: #58a6ff;
+      --accent-purple: #bc8cff;
+      --accent-green: #3fb950;
+      --accent-yellow: #d29922;
+      --accent-red: #f85149;
+      --card-glow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    /* Theme 2: Cyberpunk Neon */
+    body.theme-neon {
+      --bg-dark: #07080e;
+      --panel-bg: rgba(15, 17, 26, 0.92);
+      --panel-border: rgba(0, 243, 255, 0.35);
+      --text-main: #d8f0ff;
+      --text-bright: #ffffff;
+      --text-muted: #6e8fa8;
+      --accent-blue: #00f3ff;
+      --accent-purple: #ff007f;
+      --accent-green: #00ff99;
+      --accent-yellow: #ffe600;
+      --accent-red: #ff0055;
+      --card-glow: 0 0 20px rgba(0, 243, 255, 0.15);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(0, 243, 255, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(255, 0, 127, 0.12) 0px, transparent 50%);
+    }
+
+    /* Theme 3: Adeptus Mechanicus (Phosphor Cogitator Terminal) */
+    body.theme-phosphor {
+      --bg-dark: #020a04;
+      --panel-bg: rgba(4, 18, 8, 0.94);
+      --panel-border: rgba(0, 255, 102, 0.45);
+      --text-main: #00ff66;
+      --text-bright: #66ff99;
+      --text-muted: #1e7033;
+      --accent-blue: #33ff77;
+      --accent-purple: #99ffbb;
+      --accent-green: #00ff66;
+      --accent-yellow: #ffff55;
+      --accent-red: #ff3344;
+      --card-glow: 0 0 20px rgba(0, 255, 102, 0.25);
+      --font-sans: 'Share Tech Mono', 'JetBrains Mono', 'Courier New', monospace;
+      --font-mono: 'Share Tech Mono', 'Consolas', monospace;
+      background-image: 
+        radial-gradient(at 50% 0%, rgba(0, 255, 102, 0.12) 0px, transparent 60%);
+    }
+
+    body.theme-phosphor::before {
+      background-image: url('/assets/bg_mechanicus.png') !important;
+      opacity: 0.65 !important;
+      mix-blend-mode: screen !important;
+    }
+
+    body.theme-phosphor::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.38) 50%), linear-gradient(90deg, rgba(0, 255, 0, 0.03), rgba(0, 255, 102, 0.01), rgba(0, 255, 0, 0.03));
+      background-size: 100% 3px, 6px 100%;
+      pointer-events: none;
+      z-index: 99999;
+      opacity: 0.65;
+    }
+
+    body.theme-phosphor .brand-title,
+    body.theme-phosphor .stat-value,
+    body.theme-phosphor h2,
+    body.theme-phosphor h3,
+    body.theme-phosphor .btn-primary {
+      text-shadow: 0 0 8px rgba(0, 255, 102, 0.75), 0 0 18px rgba(0, 255, 102, 0.35);
+    }
+
+    body.theme-phosphor .stat-card,
+    body.theme-phosphor .panel,
+    body.theme-phosphor .modal-content {
+      border: 1px solid rgba(0, 255, 102, 0.45) !important;
+      box-shadow: inset 0 0 20px rgba(0, 255, 102, 0.08), 0 0 18px rgba(0, 255, 102, 0.18) !important;
+    }
+
+    /* Theme 4: Light Clean (Modo Claro) */
+    body.theme-light {
+      --bg-dark: #f6f8fa;
+      --panel-bg: rgba(255, 255, 255, 0.95);
+      --panel-border: #d0d7de;
+      --text-main: #24292f;
+      --text-bright: #0969da;
+      --text-muted: #57606a;
+      --accent-blue: #0969da;
+      --accent-purple: #8250df;
+      --accent-green: #1a7f37;
+      --accent-yellow: #9a6700;
+      --accent-red: #cf222e;
+      --card-glow: 0 4px 20px rgba(140, 149, 159, 0.2);
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      background-image: 
+        radial-gradient(at 50% 0%, rgba(9, 105, 218, 0.08) 0px, transparent 60%);
+    }
+
+    body.theme-light::before {
+      opacity: 0.15 !important;
+      mix-blend-mode: multiply !important;
+    }
+
+    body.theme-light select,
+    body.theme-light input,
+    body.theme-light textarea {
+      background: #ffffff !important;
+      color: #24292f !important;
+      border-color: #d0d7de !important;
+    }
+
+    body.theme-light .stat-card,
+    body.theme-light .panel,
+    body.theme-light .modal-content {
+      box-shadow: 0 6px 24px rgba(140, 149, 159, 0.15) !important;
+    }
+
+    body.theme-light #testTabContent,
+    body.theme-light #mdTextarea {
+      background: #f6f8fa !important;
+      color: #24292f !important;
+      border-color: #d0d7de !important;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-image: url('/assets/bg_tentacles.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0.55;
+      mix-blend-mode: screen;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header, main, footer, .modal {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    header {
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--panel-border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #fff;
+      font-size: 1.2rem;
+      box-shadow: 0 0 15px rgba(88, 166, 255, 0.4);
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-bright);
+      letter-spacing: -0.5px;
+    }
+
+    .brand-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .control-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    select, input, button {
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    select {
+      background: var(--input-bg);
+      color: var(--text-bright);
+      border: 1px solid var(--panel-border);
+      padding: 0.55rem 1rem;
+      min-width: 220px;
+      cursor: pointer;
+    }
+
+    select:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #238636, #2ea043);
+      color: #ffffff;
+      border: none;
+      padding: 0.6rem 1.4rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 12px rgba(46, 160, 67, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(46, 160, 67, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--btn-sec-bg);
+      color: var(--btn-sec-text);
+      border: 1px solid var(--btn-sec-border);
+      padding: 0.6rem 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: var(--btn-sec-hover);
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      padding: 2rem;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .stat-card {
+      background: var(--panel-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      box-shadow: var(--card-glow);
+    }
+
+    .stat-title {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-bright);
+    }
+
+    .stat-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .badge-high { color: var(--accent-red); }
+    .badge-medium { color: var(--accent-yellow); }
+    .badge-low { color: var(--accent-green); }
+
+    /* Graph Matrix */
+    .section-card {
+      background: var(--panel-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: var(--card-glow);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-bright);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Visual Graph Matrix */
+    .graph-container {
+      background: var(--terminal-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      min-height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow-x: auto;
+    }
+
+    .graph-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      width: 100%;
+      gap: 2rem;
+    }
+
+    .node-source {
+      background: linear-gradient(135deg, rgba(88, 166, 255, 0.2), rgba(188, 140, 255, 0.2));
+      border: 2px solid var(--accent-blue);
+      border-radius: 12px;
+      padding: 1.25rem 2rem;
+      text-align: center;
+      box-shadow: 0 0 25px rgba(88, 166, 255, 0.3);
+    }
+
+    .node-source-title {
+      font-weight: 700;
+      color: var(--accent-blue);
+      font-size: 1.2rem;
+    }
+
+    .node-targets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      max-width: 900px;
+    }
+
+    .target-chip {
+      background: var(--chip-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .target-chip:hover, .target-chip.active {
+      border-color: var(--accent-purple);
+      background: rgba(188, 140, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .chip-name {
+      font-weight: 600;
+      color: var(--text-bright);
+    }
+
+    .chip-count {
+      background: rgba(88, 166, 255, 0.15);
+      color: var(--accent-blue);
+      border-radius: 12px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    /* Filters Bar */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      background: var(--subpanel-bg);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--panel-border);
+    }
+
+    .search-input {
+      background: var(--input-bg);
+      border: 1px solid var(--panel-border);
+      color: var(--text-bright);
+      padding: 0.5rem 0.8rem;
+      width: 250px;
+    }
+
+    /* Impact Table */
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background: var(--table-header-bg);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid var(--panel-border);
+    }
+
+    td {
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid var(--panel-border);
+      font-size: 0.9rem;
+      vertical-align: top;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .file-link {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--accent-blue);
+      text-decoration: none;
+      word-break: break-all;
+    }
+
+    .file-link:hover { text-decoration: underline; }
+
+    .tag {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .tag-high { background: rgba(248, 81, 73, 0.15); color: var(--accent-red); border: 1px solid rgba(248, 81, 73, 0.3); }
+    .tag-medium { background: rgba(210, 153, 34, 0.15); color: var(--accent-yellow); border: 1px solid rgba(210, 153, 34, 0.3); }
+    .tag-low { background: rgba(63, 185, 80, 0.15); color: var(--accent-green); border: 1px solid rgba(63, 185, 80, 0.3); }
+
+    .code-block {
+      background: var(--code-bg);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      border: 1px solid var(--panel-border);
+      color: var(--text-bright);
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .match-highlight {
+      background: rgba(188, 140, 255, 0.25);
+      color: #ffffff;
+      padding: 0.1rem 0.3rem;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    /* Modal / Drawer */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(5px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: var(--bg-dark);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 900px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--card-glow);
+    }
+
+    .modal-header {
+      padding: 1.25rem;
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+      overflow-y: auto;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .close-btn:hover { color: var(--text-bright); }
+
+    /* Loading Spinner */
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border-left-color: var(--accent-blue);
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+
+    /* Toast Notifications */
+    #toastContainer {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 0.9rem 1.25rem;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      color: var(--text-bright);
+      font-size: 0.9rem;
+      pointer-events: auto;
+      animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideInRight {
+      from { transform: translateX(120%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <img src="/assets/logo.png" alt="Watcher Octopus Logo" style="width: 60px; height: 60px; border-radius: 50%; border: 1px solid var(--panel-border); object-fit: cover; box-shadow: 0 0 16px rgba(0, 243, 255, 0.35);" />
+      <div>
+        <div class="brand-title" style="font-size: 1.4rem;">Watcher</div>
+        <div class="brand-subtitle">Multi-Engine Cross Impact Analyzer</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="control-group">
+        <span class="control-label">Tipo de Módulo</span>
+        <select id="categorySelect" onchange="filterEnginesByType()">
+          <option value="backend" selected>Backend (Rails Engines)</option>
+          <option value="frontend">Frontend Applications</option>
+          <option value="ALL">Todos os Módulos (46)</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <span class="control-label">Target Engine (Source)</span>
+        <select id="engineSelect">
+          <option value="">Carregando engines...</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <span class="control-label">Git Diff Target</span>
+        <select id="diffTarget">
+          <option value="working">Uncommitted Changes (Working Tree)</option>
+          <option value="staged">Staged Changes</option>
+          <option value="branch">Branch vs Master</option>
+          <option value="last_commit">Last Commit (HEAD~1)</option>
+        </select>
+      </div>
+
+      <button id="analyzeBtn" class="btn-primary" onclick="runAnalysis()">
+        <span>⚡ Verifique Impactos</span>
+      </button>
+
+      <button class="btn-secondary" onclick="exportMarkdown()">
+        📋 Exportar Report
+      </button>
+
+      <button class="btn-secondary" style="padding: 0.55rem 0.85rem; font-size: 1.15rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-left: 0.25rem;" title="Configurações" onclick="openModal('settingsModal')">
+        ⚙️
+      </button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- KPI Summary Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-title">Engine Selecionada</div>
+        <div class="stat-value" id="kpiEngine">--</div>
+        <div class="stat-desc" id="kpiEngineSub">Selecione uma engine acima</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Entidades Alteradas</div>
+        <div class="stat-value" id="kpiEntities">0</div>
+        <div class="stat-desc">Models, Services, Builders, Queries...</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Arquivos Impactados</div>
+        <div class="stat-value" id="kpiImpactedFiles">0</div>
+        <div class="stat-desc" id="kpiImpactedEngines">Em 0 outros módulos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Nível de Risco</div>
+        <div class="stat-value" id="kpiRisk">--</div>
+        <div class="stat-desc" id="kpiRiskSub">🔴 0 Alto | 🟡 0 Médio</div>
+      </div>
+    </div>
+
+    <!-- Visual Dependency Network -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">
+          <span>🌐 Grafo de Impacto Cruzado entre Módulos</span>
+        </div>
+      </div>
+      <div class="graph-container">
+        <div class="graph-wrapper">
+          <div class="node-source" id="sourceNode">
+            <div style="font-size: 0.75rem; color: var(--text-muted);">SOURCE ENGINE</div>
+            <div class="node-source-title" id="sourceNodeName">Stock</div>
+          </div>
+          <div style="color: var(--accent-purple); font-weight: 700; font-size: 1.5rem;">➔</div>
+          <div class="node-targets" id="targetNodesContainer">
+            <div style="color: var(--text-muted); font-size: 0.9rem;">Nenhuma análise executada ainda. Clique em "Verifique Impactos".</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Impact Explorer Table -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">
+          <span>🔍 Detalhamento de Impactos por Módulo</span>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="control-group">
+          <span class="control-label">Filtrar por Módulo</span>
+          <select id="filterEngine" onchange="applyFilters()">
+            <option value="ALL">Todos os Módulos Impactados</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <span class="control-label">Severidade</span>
+          <select id="filterSeverity" onchange="applyFilters()">
+            <option value="ALL">Todas Severidades</option>
+            <option value="HIGH">🔴 Alta Severidade</option>
+            <option value="MEDIUM">🟡 Média Severidade</option>
+            <option value="LOW">🟢 Baixa Severidade</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <span class="control-label">Buscar</span>
+          <input type="text" id="searchInput" class="search-input" placeholder="Filtrar por arquivo ou termo..." oninput="applyFilters()">
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Módulo Afetado</th>
+              <th>Arquivo & Linha</th>
+              <th>Categoria</th>
+              <th>Severidade</th>
+              <th>Código / Termo de Impacto</th>
+            </tr>
+          </thead>
+          <tbody id="impactTableBody">
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                Selecione uma engine e clique em <b>"Verifique Impactos"</b> para analisar alterações do Git diff.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="expandTableContainer" style="display: none; justify-content: center; padding-top: 1rem; border-top: 1px solid var(--panel-border); margin-top: 0.5rem;">
+        <button id="expandTableBtn" class="btn-secondary" style="border-radius: 20px; padding: 0.5rem 1.5rem; font-weight: 600; color: var(--accent-blue); border-color: rgba(88, 166, 255, 0.4);" onclick="toggleTableExpand()">
+          👇 Mostrar Todos os Impactos
+        </button>
+      </div>
+    </div>
+
+    <!-- RSpec Test Execution Section -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">
+          <span>🧪 Execução de Testes RSpec (Paralelo / Multithread)</span>
+        </div>
+      </div>
+
+      <div class="filter-bar" style="justify-content: space-between;">
+        <div style="display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap;">
+          <button id="runSourceTestBtn" class="btn-primary" onclick="runSourceEngineTest()">
+            <span>▶️ Rodar Testes na Origem (<span id="sourceTestEngineLabel">stock</span>)</span>
+          </button>
+
+          <div class="control-group">
+            <span class="control-label">Escopo das Specs</span>
+            <select id="specScopeSelect">
+              <option value="impacted_only" selected>🎯 Apenas Specs Afetadas (Granular)</option>
+              <option value="models">📦 Apenas Models (spec/models)</option>
+              <option value="services">⚙️ Apenas Services (spec/services)</option>
+              <option value="builders">🏗️ Apenas Builders (spec/builders)</option>
+              <option value="queries">🔍 Apenas Queries (spec/queries)</option>
+              <option value="requests">🌐 Apenas Requests / API (spec/requests)</option>
+              <option value="all">💯 Suíte Completa da Engine (spec)</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <span class="control-label">Módulos Impactados para Testar</span>
+            <div id="impactedCheckboxes" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; background: var(--input-bg); padding: 0.45rem 0.8rem; border-radius: 6px; border: 1px solid var(--panel-border);">
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Execute uma análise de impactos primeiro.</span>
+            </div>
+          </div>
+        </div>
+
+        <button id="runSelectedTestsBtn" class="btn-secondary" style="background: linear-gradient(135deg, #1f6beb, #238636); color: #fff; border: none;" onclick="runSelectedEngineTests()">
+          <span>⚡ Rodar Testes nos Selecionados</span>
+        </button>
+      </div>
+
+      <!-- Test Execution Results Dashboard (Tabs + Output) -->
+      <div id="testResultsContainer" style="display: none; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+        <div id="testTabsHeader" style="display: flex; gap: 0.5rem; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; overflow-x: auto;">
+          <!-- Dynamic Tabs -->
+        </div>
+
+        <div id="testTabContent" style="background: var(--terminal-bg); border: 1px solid var(--panel-border); border-radius: 8px; padding: 1.25rem; font-family: var(--font-mono); min-height: 250px; color: var(--text-bright);">
+          <!-- Active Tab Content -->
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Markdown Modal -->
+  <div class="modal" id="mdModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="color: var(--text-bright);">📋 Relatório de Impacto (Markdown)</h3>
+        <button class="close-btn" onclick="closeModal('mdModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <textarea id="mdTextarea" readonly style="width: 100%; height: 350px; background: var(--input-bg); color: var(--text-bright); border: 1px solid var(--panel-border); font-family: var(--font-mono); font-size: 0.85rem; padding: 1rem; border-radius: 8px;"></textarea>
+        <button class="btn-primary" style="margin-top: 1rem;" onclick="copyMarkdownText()">Copiar para Área de Transferência</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal" id="settingsModal">
+    <div class="modal-content" style="max-width: 450px;">
+      <div class="modal-header">
+        <h3 style="color: var(--text-bright); display: flex; align-items: center; gap: 0.5rem;">⚙️ Configurações do Sistema</h3>
+        <button class="close-btn" onclick="closeModal('settingsModal')">&times;</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <div class="control-group">
+          <span class="control-label" style="font-size: 0.9rem; font-weight: 600; color: var(--text-bright);">Tema Visual da Interface</span>
+          <select id="themeSelect" onchange="changeTheme(this.value)" style="width: 100%; margin-top: 0.4rem; padding: 0.65rem; border-radius: 6px; background: var(--input-bg); color: var(--text-bright); border: 1px solid var(--panel-border); font-size: 0.9rem;">
+            <option value="dark" selected>🌙 Dark Modern (Padrão)</option>
+            <option value="light">☀️ Light Clean (Modo Claro)</option>
+            <option value="neon">⚡ Cyberpunk Neon</option>
+            <option value="phosphor">⚙️ Adeptus Mechanicus (Cogitator Terminal)</option>
+          </select>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.4rem;">
+            As configurações são salvas automaticamente no servidor (settings.json).
+          </div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--panel-border); margin: 0.2rem 0;" />
+
+        <div>
+          <span class="control-label" style="font-size: 0.9rem; font-weight: 600; color: var(--text-bright); display: block; margin-bottom: 0.75rem;">🔔 Notificações e Avisos</span>
+          
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem;">
+            <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: var(--text-main);">
+              <span>🔔 Notificação do Sistema (Navegador/OS)</span>
+              <input type="checkbox" id="settingNotifyOS" onchange="updateNotificationSettings()" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent-blue);" checked>
+            </label>
+
+            <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: var(--text-main);">
+              <span>💬 Notificação Flutuante na Tela (Toast)</span>
+              <input type="checkbox" id="settingNotifyToast" onchange="updateNotificationSettings()" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent-blue);" checked>
+            </label>
+
+            <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: var(--text-main);">
+              <span>🔊 Aviso Sonoro ao Concluir Testes</span>
+              <input type="checkbox" id="settingNotifySound" onchange="updateNotificationSettings()" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent-blue);" checked>
+            </label>
+          </div>
+        </div>
+
+        <div style="text-align: right; margin-top: 1rem;">
+          <button class="btn-primary" onclick="closeModal('settingsModal')">Concluído</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentAnalysisData = null;
+    let allEnginesData = [];
+
+    // Load available engines on boot
+    async function loadEngines() {
+      try {
+        const res = await fetch('/api/engines');
+        const data = await res.json();
+        if (data.status === 'success') {
+          allEnginesData = data.engines || [];
+          filterEnginesByType();
+        }
+      } catch (err) {
+        console.error('Failed to load engines:', err);
+      }
+    }
+
+    function filterEnginesByType() {
+      const category = document.getElementById('categorySelect').value;
+      const select = document.getElementById('engineSelect');
+      select.innerHTML = '';
+
+      const filtered = allEnginesData.filter(eng => {
+        if (category === 'backend') return eng.type === 'Rails Engine';
+        if (category === 'frontend') return eng.type === 'Frontend';
+        return true; // ALL
+      });
+
+      if (filtered.length === 0) {
+        select.innerHTML = '<option value="">Nenhum módulo encontrado</option>';
+        return;
+      }
+
+      filtered.forEach((eng, idx) => {
+        const opt = document.createElement('option');
+        opt.value = eng.name;
+        const branchTag = eng.git && eng.git.branch ? ` [${eng.git.branch}]` : '';
+        const dirtyTag = eng.git && eng.git.dirty ? ` (● ${eng.git.uncommitted_files + eng.git.staged_files} alterados)` : '';
+        opt.textContent = `${eng.name}${branchTag}${dirtyTag}`;
+        if (eng.name === 'stock' || idx === 0) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    // Run impact analysis
+    async function runAnalysis() {
+      const engine = document.getElementById('engineSelect').value;
+      const target = document.getElementById('diffTarget').value;
+      const btn = document.getElementById('analyzeBtn');
+
+      if (!engine) return;
+
+      btn.innerHTML = `<span class="spinner"></span> <span>Analisando...</span>`;
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ engine, target })
+        });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+          currentAnalysisData = data;
+          renderDashboard(data);
+        } else {
+          alert('Erro ao analisar: ' + data.message);
+        }
+      } catch (err) {
+        alert('Erro de conexão ao servidor: ' + err.message);
+      } finally {
+        btn.innerHTML = `<span>⚡ Verifique Impactos</span>`;
+        btn.disabled = false;
+      }
+    }
+
+    function renderDashboard(data) {
+      showAllImpacts = false;
+      const report = data.report || {};
+      const risk = report.risk_summary || {};
+      const engineImpacts = report.engine_impacts || {};
+
+      // 1. KPIs
+      document.getElementById('kpiEngine').textContent = data.engine;
+      document.getElementById('kpiEngineSub').textContent = `Diff: ${data.target}`;
+      document.getElementById('kpiEntities').textContent = data.entities_count;
+      document.getElementById('kpiImpactedFiles').textContent = report.total_impacted_files || 0;
+      document.getElementById('kpiImpactedEngines').textContent = `Em ${report.impacted_engines_count || 0} outros módulos`;
+
+      // Update RSpec Test buttons & checkboxes
+      const sourceTestLabel = document.getElementById('sourceTestEngineLabel');
+      if (sourceTestLabel) sourceTestLabel.textContent = data.engine;
+
+      const checkboxContainer = document.getElementById('impactedCheckboxes');
+      if (checkboxContainer) {
+        checkboxContainer.innerHTML = '';
+        const targetEngines = Object.keys(engineImpacts);
+        if (targetEngines.length === 0) {
+          checkboxContainer.innerHTML = '<span style="font-size: 0.8rem; color: var(--text-muted);">Nenhum outro módulo impactado.</span>';
+        } else {
+          targetEngines.forEach(tEng => {
+            const lbl = document.createElement('label');
+            lbl.style.cssText = 'font-size: 0.85rem; color: var(--text-bright); display: flex; align-items: center; gap: 0.35rem; cursor: pointer;';
+            lbl.innerHTML = `<input type="checkbox" class="test-engine-checkbox" value="${tEng}" checked> <span>${tEng}</span>`;
+            checkboxContainer.appendChild(lbl);
+          });
+        }
+      }
+
+      const riskElem = document.getElementById('kpiRisk');
+      const sysRisk = risk.overall_system_risk || 'LOW';
+      riskElem.textContent = sysRisk;
+      riskElem.className = 'stat-value badge-' + sysRisk.toLowerCase();
+      document.getElementById('kpiRiskSub').textContent = `🔴 ${risk.high_risk_files || 0} Alto | 🟡 ${risk.medium_risk_files || 0} Médio`;
+
+      // 2. Network Graph Nodes
+      document.getElementById('sourceNodeName').textContent = data.engine;
+      const targetContainer = document.getElementById('targetNodesContainer');
+      targetContainer.innerHTML = '';
+
+      const filterEngineSelect = document.getElementById('filterEngine');
+      filterEngineSelect.innerHTML = '<option value="ALL">Todos os Módulos Impactados</option>';
+
+      if (Object.keys(engineImpacts).length === 0) {
+        targetContainer.innerHTML = `<div style="color: var(--text-muted); font-size: 0.9rem;">Nenhum impacto encontrado em outros módulos para esta alteração.</div>`;
+      } else {
+        Object.entries(engineImpacts).forEach(([targetName, engData]) => {
+          const chip = document.createElement('div');
+          chip.className = 'target-chip';
+          chip.onclick = () => {
+            filterEngineSelect.value = targetName;
+            applyFilters();
+          };
+          chip.innerHTML = `
+            <span class="chip-name">${targetName}</span>
+            <span class="chip-count">${engData.impacted_files_count} arquivos</span>
+          `;
+          targetContainer.appendChild(chip);
+
+          const opt = document.createElement('option');
+          opt.value = targetName;
+          opt.textContent = `${targetName} (${engData.impacted_files_count} arquivos)`;
+          filterEngineSelect.appendChild(opt);
+        });
+      }
+
+      // 3. Impact Table
+      applyFilters();
+    }
+
+    let showAllImpacts = false;
+
+    function toggleTableExpand() {
+      showAllImpacts = !showAllImpacts;
+      applyFilters();
+    }
+
+    function applyFilters() {
+      if (!currentAnalysisData) return;
+
+      const report = currentAnalysisData.report || {};
+      const engineImpacts = report.engine_impacts || {};
+
+      const selEngine = document.getElementById('filterEngine').value;
+      const selSeverity = document.getElementById('filterSeverity').value;
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+      const tbody = document.getElementById('impactTableBody');
+      tbody.innerHTML = '';
+
+      let allMatchingItems = [];
+
+      Object.entries(engineImpacts).forEach(([targetName, engData]) => {
+        if (selEngine !== 'ALL' && selEngine !== targetName) return;
+
+        const filesList = engData.file_impacts_list || [];
+        filesList.forEach(fileObj => {
+          const fileSeverity = fileObj.overall_severity || 'LOW';
+          if (selSeverity !== 'ALL' && selSeverity !== fileSeverity) return;
+
+          const fileMatches = fileObj.matches || [];
+          fileMatches.forEach(match => {
+            const textMatch = fileObj.file_path.toLowerCase().includes(searchTerm) ||
+                              match.line_text.toLowerCase().includes(searchTerm) ||
+                              match.matched_term.toLowerCase().includes(searchTerm);
+
+            if (searchTerm && !textMatch) return;
+
+            allMatchingItems.push({
+              targetName,
+              fileObj,
+              match,
+              fileSeverity
+            });
+          });
+        });
+      });
+
+      const totalCount = allMatchingItems.length;
+      const expandContainer = document.getElementById('expandTableContainer');
+      const expandBtn = document.getElementById('expandTableBtn');
+
+      if (totalCount <= 3) {
+        expandContainer.style.display = 'none';
+      } else {
+        expandContainer.style.display = 'flex';
+        if (showAllImpacts) {
+          expandBtn.textContent = `👆 Recolher Tabela (Exibindo todos os ${totalCount} impactos)`;
+        } else {
+          expandBtn.textContent = `👇 Visualizar Todos os Impactos (Mostrando 3 de ${totalCount})`;
+        }
+      }
+
+      const displayItems = showAllImpacts ? allMatchingItems : allMatchingItems.slice(0, 3);
+
+      displayItems.forEach(item => {
+        const tr = document.createElement('tr');
+        const sev = item.match.severity || item.fileSeverity;
+        const tagClass = 'tag-' + sev.toLowerCase();
+
+        tr.innerHTML = `
+          <td style="font-weight: 600; color: var(--accent-purple);">${item.targetName}</td>
+          <td>
+            <span class="file-link">${item.fileObj.file_path}</span>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Linha ${item.match.line_num}</div>
+          </td>
+          <td><span style="font-size: 0.8rem; text-transform: capitalize;">${item.match.category.replace('_', ' ')}</span></td>
+          <td><span class="tag ${tagClass}">${sev}</span></td>
+          <td>
+            <div class="code-block">${highlightTerm(escapeHtml(item.match.line_text), escapeHtml(item.match.matched_term))}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">${item.match.risk_reason || ''}</div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      if (totalCount === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+              Nenhum resultado encontrado para os filtros selecionados.
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    function highlightTerm(text, term) {
+      if (!term) return text;
+      const regex = new RegExp(`(${term})`, 'gi');
+      return text.replace(regex, `<span class="match-highlight">$1</span>`);
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function exportMarkdown() {
+      if (!currentAnalysisData) {
+        alert('Rode a análise primeiro!');
+        return;
+      }
+
+      const report = currentAnalysisData.report || {};
+      const risk = report.risk_summary || {};
+      const engineImpacts = report.engine_impacts || {};
+
+      let md = `# 🛡️ Auriga Watcher - Impact Analysis Report\n\n`;
+      md += `- **Source Engine:** \`${currentAnalysisData.engine}\`\n`;
+      md += `- **Diff Target:** \`${currentAnalysisData.target}\`\n`;
+      md += `- **Overall Risk Rating:** **${risk.overall_system_risk || 'LOW'}**\n`;
+      md += `- **Entities Changed:** ${currentAnalysisData.entities_count}\n`;
+      md += `- **Total Impacted Files:** ${report.total_impacted_files || 0} across ${report.impacted_engines_count || 0} modules\n\n`;
+
+      md += `## 📊 Impact Summary by Target Module\n\n`;
+      md += `| Target Module | Impacted Files | Total Matches | Severity |\n`;
+      md += `| :--- | :--- | :--- | :--- |\n`;
+
+      Object.entries(engineImpacts).forEach(([targetName, engData]) => {
+        const sev = engData.severity_summary ? engData.severity_summary.overall : 'LOW';
+        md += `| **${targetName}** | ${engData.impacted_files_count} | ${engData.total_matches} | ${sev} |\n`;
+      });
+
+      md += `\n## 🔍 Top High & Medium Risk Impacted Files\n\n`;
+
+      Object.entries(engineImpacts).forEach(([targetName, engData]) => {
+        const filesList = engData.file_impacts_list || [];
+        filesList.forEach(f => {
+          if (f.overall_severity === 'HIGH' || f.overall_severity === 'MEDIUM') {
+            md += `### \`[${targetName}]\` ${f.file_path}\n`;
+            f.matches.forEach(m => {
+              md += `- **L${m.line_num}** (${m.severity}): \`${m.matched_term}\` in \`${m.line_text.trim()}\`\n`;
+            });
+            md += `\n`;
+          }
+        });
+      });
+
+      document.getElementById('mdTextarea').value = md;
+      document.getElementById('mdModal').style.display = 'flex';
+    }
+
+    function openModal(id) {
+      document.getElementById(id).style.display = 'flex';
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    function copyMarkdownText() {
+      const textarea = document.getElementById('mdTextarea');
+      textarea.select();
+      document.execCommand('copy');
+      alert('Relatório copiado para a área de transferência!');
+    }
+
+    // RSpec Test Execution Logic
+    let currentTestResults = null;
+
+    function getImpactedSpecFiles(engineName) {
+      if (!currentAnalysisData) return [];
+      const report = currentAnalysisData.report || {};
+      const engineImpacts = report.engine_impacts || {};
+
+      if (engineName === currentAnalysisData.engine) {
+        const entities = currentAnalysisData.entities || [];
+        return entities.map(e => e.file_path).filter(Boolean);
+      }
+
+      const engData = engineImpacts[engineName];
+      if (engData && engData.file_impacts_list) {
+        return engData.file_impacts_list.map(f => f.file_path);
+      }
+
+      return [];
+    }
+
+    function runSourceEngineTest() {
+      const sourceEngine = document.getElementById('engineSelect').value;
+      const scope = document.getElementById('specScopeSelect').value;
+      if (!sourceEngine) return;
+
+      const specFiles = getImpactedSpecFiles(sourceEngine);
+      executeTests([{ engine: sourceEngine, scope: scope, spec_files: specFiles }]);
+    }
+
+    function runSelectedEngineTests() {
+      const sourceEngine = document.getElementById('engineSelect').value;
+      const scope = document.getElementById('specScopeSelect').value;
+      const checkedBoxes = document.querySelectorAll('.test-engine-checkbox:checked');
+      
+      const reqs = [];
+      if (sourceEngine) {
+        reqs.push({
+          engine: sourceEngine,
+          scope: scope,
+          spec_files: getImpactedSpecFiles(sourceEngine)
+        });
+      }
+
+      checkedBoxes.forEach(box => {
+        if (box.value !== sourceEngine) {
+          reqs.push({
+            engine: box.value,
+            scope: scope,
+            spec_files: getImpactedSpecFiles(box.value)
+          });
+        }
+      });
+
+      if (reqs.length === 0) {
+        alert('Selecione ao menos um módulo para rodar os testes.');
+        return;
+      }
+
+      executeTests(reqs);
+    }
+
+    async function executeTests(engineRequests) {
+      const container = document.getElementById('testResultsContainer');
+      const tabsHeader = document.getElementById('testTabsHeader');
+      const tabContent = document.getElementById('testTabContent');
+
+      container.style.display = 'flex';
+      tabsHeader.innerHTML = '<div style="color: var(--accent-blue); padding: 0.5rem;"><span class="spinner"></span> Executando testes RSpec em paralelo...</div>';
+      tabContent.innerHTML = '<div style="color: var(--text-muted); font-size: 0.9rem;">Aguarde o término da execução dos testes em paralelo...</div>';
+
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+
+      try {
+        const res = await fetch('/api/run-tests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ engines: engineRequests })
+        });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+          currentTestResults = data.results || {};
+          renderTestResultsTabs(currentTestResults);
+          notifyTestCompletion(currentTestResults);
+        } else {
+          tabsHeader.innerHTML = '<div style="color: var(--accent-red);">Erro ao executar testes.</div>';
+          tabContent.innerHTML = `<div style="color: var(--accent-red);">${escapeHtml(data.message || 'Erro desconhecido')}</div>`;
+          showToast('🔴 Erro nos Testes', data.message || 'Ocorreu um erro ao disparar o RSpec.', 'error');
+        }
+      } catch (err) {
+        tabsHeader.innerHTML = '<div style="color: var(--accent-red);">Falha na requisição de testes.</div>';
+        tabContent.innerHTML = `<div style="color: var(--accent-red);">${escapeHtml(err.message)}</div>`;
+        showToast('🔴 Erro de Conexão', err.message, 'error');
+      }
+    }
+
+    let userNotificationSettings = {
+      notifications_enabled: true,
+      toasts_enabled: true,
+      sound_enabled: true
+    };
+
+    function playNotificationSound(success = true) {
+      if (!userNotificationSettings.sound_enabled) return;
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = success ? 'sine' : 'sawtooth';
+        osc.frequency.setValueAtTime(success ? 587.33 : 220, ctx.currentTime);
+        if (success) {
+          osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+        }
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
+      } catch (e) {}
+    }
+
+    function notifyTestCompletion(results) {
+      if (!results) return;
+      const engines = Object.keys(results);
+      let passedCount = 0;
+      let failedCount = 0;
+      let errorCount = 0;
+
+      engines.forEach(eng => {
+        const st = results[eng].status;
+        if (st === 'passed') passedCount++;
+        else if (st === 'failed') failedCount++;
+        else errorCount++;
+      });
+
+      const isSuccess = failedCount === 0 && errorCount === 0;
+      const summaryText = `${passedCount}/${engines.length} suítes de teste passaram.` + (failedCount > 0 ? ` (${failedCount} falhas)` : '');
+
+      if (userNotificationSettings.sound_enabled) {
+        playNotificationSound(isSuccess);
+      }
+
+      // 1. Floating Toast
+      if (userNotificationSettings.toasts_enabled) {
+        showToast(isSuccess ? '🟢 Testes Concluídos!' : '🔴 Falha nos Testes', summaryText, isSuccess ? 'success' : 'error');
+      }
+
+      // 2. Browser Native Notification
+      if (userNotificationSettings.notifications_enabled && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification(`Watcher - Testes ${isSuccess ? 'PASSARAM 🟢' : 'FALHARAM 🔴'}`, {
+          body: summaryText,
+          icon: '/assets/logo.png'
+        });
+      }
+    }
+
+    function showToast(title, bodyText, type = 'info') {
+      let container = document.getElementById('toastContainer');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        document.body.appendChild(container);
+      }
+
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      const borderCol = type === 'success' ? 'var(--accent-green)' : (type === 'error' ? 'var(--accent-red)' : 'var(--accent-blue)');
+      toast.style.borderColor = borderCol;
+
+      toast.innerHTML = `
+        <img src="/assets/logo.png" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;" />
+        <div>
+          <div style="font-weight: 700; color: var(--text-bright);">${escapeHtml(title)}</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(bodyText)}</div>
+        </div>
+      `;
+
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 5000);
+    }
+
+    function renderTestResultsTabs(results) {
+      const tabsHeader = document.getElementById('testTabsHeader');
+      tabsHeader.innerHTML = '';
+
+      const engines = Object.keys(results);
+      if (engines.length === 0) {
+        tabsHeader.innerHTML = '<div style="color: var(--text-muted);">Nenhum resultado de teste retornado.</div>';
+        return;
+      }
+
+      engines.forEach((eng, idx) => {
+        const res = results[eng];
+        const tabBtn = document.createElement('button');
+        tabBtn.className = `btn-secondary ${idx === 0 ? 'active' : ''}`;
+        tabBtn.style.borderRadius = '6px';
+        tabBtn.style.padding = '0.4rem 0.8rem';
+        tabBtn.style.fontSize = '0.85rem';
+        
+        let statusBadge = '🟢 PASSED';
+        if (res.status === 'failed') statusBadge = '🔴 FAILED';
+        else if (res.status === 'error' || res.status === 'timeout') statusBadge = '⚠️ ERROR';
+
+        tabBtn.innerHTML = `<strong>${eng}</strong> <span style="font-size: 0.75rem; opacity: 0.9;">(${statusBadge})</span>`;
+        tabBtn.onclick = () => switchTestTab(eng);
+        tabBtn.id = `testTab_${eng}`;
+        tabsHeader.appendChild(tabBtn);
+      });
+
+      switchTestTab(engines[0]);
+    }
+
+    function switchTestTab(eng) {
+      const results = currentTestResults || {};
+      const res = results[eng];
+
+      document.querySelectorAll('#testTabsHeader button').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById(`testTab_${eng}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const tabContent = document.getElementById('testTabContent');
+      if (!res) {
+        tabContent.innerHTML = 'Sem dados para este módulo.';
+        return;
+      }
+
+      let html = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.75rem;">`;
+      html += `<div><span style="font-size: 1.1rem; font-weight: 700; color: var(--text-bright);">${eng}</span> <span style="color: var(--text-muted); font-size: 0.85rem; margin-left: 0.5rem;">(${res.duration || 'N/A'})</span> <span style="font-size: 0.75rem; color: var(--accent-blue); background: rgba(88, 166, 255, 0.15); padding: 0.2rem 0.5rem; border-radius: 4px; margin-left: 0.5rem;">${escapeHtml(res.scope_used || 'spec')}</span></div>`;
+      
+      let badgeStyle = 'background: rgba(63, 185, 80, 0.2); color: var(--accent-green);';
+      if (res.status === 'failed') badgeStyle = 'background: rgba(248, 81, 73, 0.2); color: var(--accent-red);';
+      else if (res.status === 'error' || res.status === 'timeout') badgeStyle = 'background: rgba(210, 153, 34, 0.2); color: var(--accent-yellow);';
+
+      html += `<div style="padding: 0.3rem 0.8rem; border-radius: 6px; font-weight: 700; font-size: 0.85rem; ${badgeStyle}">${(res.status || 'unknown').toUpperCase()} | ${res.total_examples || 0} Exemplos, ${res.failures_count || 0} Falhas</div>`;
+      html += `</div>`;
+
+      if (res.failures && res.failures.length > 0) {
+        html += `<div style="background: rgba(248, 81, 73, 0.1); border: 1px solid rgba(248, 81, 73, 0.3); border-radius: 6px; padding: 1rem; margin-bottom: 1rem;">`;
+        html += `<div style="font-weight: 700; color: var(--accent-red); margin-bottom: 0.5rem;">💥 Falhas Detectadas (${res.failures.length}):</div>`;
+        res.failures.forEach(f => {
+          html += `<div style="font-size: 0.85rem; margin-bottom: 0.4rem; color: #ff7b72;">`;
+          html += `📍 <span style="font-weight: 600;">${escapeHtml(f.location)}</span> - ${escapeHtml(f.description)}`;
+          html += `</div>`;
+        });
+        html += `</div>`;
+      }
+
+      html += `<div style="font-size: 0.8rem; line-height: 1.4; color: #c9d1d9; max-height: 400px; overflow-y: auto; background: #000; padding: 1rem; border-radius: 6px; white-space: pre-wrap;">`;
+      html += formatRspecTerminal(escapeHtml(res.raw_output || res.message || 'Sem saída de terminal.'));
+      html += `</div>`;
+
+      tabContent.innerHTML = html;
+    }
+
+    function formatRspecTerminal(text) {
+      return text
+        .replace(/(\d+ examples?, \d+ failures?[^\n]*)/g, '<span style="color: #3fb950; font-weight: 700;">$1</span>')
+        .replace(/(FAILED|Failure\/Error:|rspec \.\/spec[^\n]*)/g, '<span style="color: #f85149; font-weight: 700;">$1</span>')
+        .replace(/(Finished in [^\n]*)/g, '<span style="color: #58a6ff;">$1</span>');
+    }
+
+    // Theme & Settings Management (Synced with Server)
+    async function loadServerSettings() {
+      try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        if (data.status === 'success' && data.settings) {
+          const s = data.settings;
+          if (s.theme) applyTheme(s.theme);
+          
+          userNotificationSettings.notifications_enabled = s.notifications_enabled !== false;
+          userNotificationSettings.toasts_enabled = s.toasts_enabled !== false;
+          userNotificationSettings.sound_enabled = s.sound_enabled !== false;
+
+          const osElem = document.getElementById('settingNotifyOS');
+          const toastElem = document.getElementById('settingNotifyToast');
+          const soundElem = document.getElementById('settingNotifySound');
+
+          if (osElem) osElem.checked = userNotificationSettings.notifications_enabled;
+          if (toastElem) toastElem.checked = userNotificationSettings.toasts_enabled;
+          if (soundElem) soundElem.checked = userNotificationSettings.sound_enabled;
+        }
+      } catch (err) {
+        console.error('Failed to load settings from server:', err);
+      }
+    }
+
+    async function updateNotificationSettings() {
+      userNotificationSettings.notifications_enabled = document.getElementById('settingNotifyOS').checked;
+      userNotificationSettings.toasts_enabled = document.getElementById('settingNotifyToast').checked;
+      userNotificationSettings.sound_enabled = document.getElementById('settingNotifySound').checked;
+
+      try {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            notifications_enabled: userNotificationSettings.notifications_enabled,
+            toasts_enabled: userNotificationSettings.toasts_enabled,
+            sound_enabled: userNotificationSettings.sound_enabled
+          })
+        });
+      } catch (err) {
+        console.error('Failed to save notification settings:', err);
+      }
+    }
+
+    async function changeTheme(themeName) {
+      applyTheme(themeName);
+      try {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ theme: themeName })
+        });
+      } catch (err) {
+        console.error('Failed to save theme to server:', err);
+      }
+    }
+
+    function applyTheme(themeName) {
+      document.body.className = `theme-${themeName}`;
+      const select = document.getElementById('themeSelect');
+      if (select) select.value = themeName;
+      localStorage.setItem('auriga_theme', themeName);
+    }
+
+    // Initialize UI
+    window.onload = function() {
+      const cached = localStorage.getItem('auriga_theme') || 'dark';
+      applyTheme(cached);
+      loadServerSettings();
+      loadEngines();
+    };
+  </script>
+</body>
+</html>
