@@ -981,6 +981,10 @@
         📋 Exportar Report
       </button>
 
+      <button class="btn-secondary" style="height: 38px; padding: 0 1rem; border-color: rgba(0, 243, 255, 0.4); color: var(--accent-blue);" onclick="openModal('aiExportModal')" title="Exportar Logs e Prompts Estruturados para IA">
+        🤖 Baixar Logs IA
+      </button>
+
       <button class="btn-secondary" style="height: 38px; padding: 0 0.85rem; font-size: 1.15rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-left: 0.25rem;" title="Configurações" onclick="openModal('settingsModal')">
         ⚙️
       </button>
@@ -1158,6 +1162,56 @@
       <div class="modal-body">
         <textarea id="mdTextarea" readonly style="width: 100%; height: 350px; background: var(--input-bg); color: var(--text-bright); border: 1px solid var(--panel-border); font-family: var(--font-mono); font-size: 0.85rem; padding: 1rem; border-radius: 8px;"></textarea>
         <button class="btn-primary" style="margin-top: 1rem;" onclick="copyMarkdownText()">Copiar para Área de Transferência</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Export Modal -->
+  <div class="modal" id="aiExportModal">
+    <div class="modal-content" style="max-width: 550px;">
+      <div class="modal-header">
+        <h3 style="color: var(--text-bright); display: flex; align-items: center; gap: 0.5rem;">🤖 Exportar Logs & Contexto para IA</h3>
+        <button class="close-btn" onclick="closeModal('aiExportModal')">&times;</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <div style="font-size: 0.85rem; color: var(--text-muted);">
+          Baixe os relatórios estruturados e logs capturados, formatados como prompts prontos para enviar diretamente para a sua IA (ChatGPT, Claude, Gemini, Cursor...).
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+          <!-- Option 1: Impacted Files -->
+          <div style="background: var(--subpanel-bg); border: 1px solid var(--panel-border); border-radius: 8px; padding: 1rem; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 0.9rem; font-weight: 700; color: var(--text-bright);">📁 Contexto de Arquivos Impactados</div>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">Lista caminhos de arquivos, números de linha e símbolos alterados.</div>
+            </div>
+            <button class="btn-secondary" style="font-size: 0.85rem; border-color: rgba(88, 166, 255, 0.4); color: var(--accent-blue); padding: 0.4rem 0.9rem;" onclick="downloadImpactsLogForAI()">
+              📥 Baixar .txt
+            </button>
+          </div>
+
+          <!-- Option 2: RSpec Error Logs -->
+          <div style="background: var(--subpanel-bg); border: 1px solid var(--panel-border); border-radius: 8px; padding: 1rem; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 0.9rem; font-weight: 700; color: var(--text-bright);">🧪 Log de Erros e Falhas do RSpec</div>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">Saída inteira do terminal com stack traces e falhas de specs.</div>
+            </div>
+            <button class="btn-secondary" style="font-size: 0.85rem; border-color: rgba(210, 153, 34, 0.4); color: var(--accent-yellow); padding: 0.4rem 0.9rem;" onclick="downloadRSpecLogForAI()">
+              📥 Baixar .txt
+            </button>
+          </div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--panel-border); margin: 0.2rem 0;" />
+
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
+          <button class="btn-secondary" style="border-color: rgba(63, 185, 80, 0.4); color: var(--accent-green);" onclick="copyAIPromptToClipboard()">
+            📋 Copiar Prompt Unificado
+          </button>
+          <button class="btn-primary" onclick="closeModal('aiExportModal')">
+            Concluído
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1591,6 +1645,160 @@
       alert('Relatório copiado para a área de transferência!');
     }
 
+    // AI Context & Log Exporters
+    function downloadFile(filename, content, mimeType = 'text/plain;charset=utf-8') {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function generateImpactsAIPrompt() {
+      if (!currentAnalysisData) {
+        alert('Nenhuma análise de impacto executada ainda.');
+        return null;
+      }
+
+      const report = currentAnalysisData.report || {};
+      const engineImpacts = report.engine_impacts || {};
+      const dateStr = new Date().toLocaleString('pt-BR');
+
+      let prompt = `================================================================================\n`;
+      prompt += `PROMPT PARA ASSISTENTE DE IA - CONTEXTO DE IMPACTO DE CÓDIGO MONOREPO\n`;
+      prompt += `================================================================================\n`;
+      prompt += `📅 Data de Análise: ${dateStr}\n`;
+      prompt += `📦 Módulo de Origem (Source): ${currentAnalysisData.engine}\n`;
+      prompt += `🎯 Target Git Diff: ${currentAnalysisData.target}\n`;
+      prompt += `🔴 Nível de Risco do Sistema: ${report.risk_summary ? report.risk_summary.overall_system_risk : 'LOW'}\n`;
+      prompt += `📁 Total de Arquivos Impactados: ${report.total_impacted_files || 0} em ${report.impacted_engines_count || 0} outros módulos\n`;
+      prompt += `================================================================================\n\n`;
+
+      prompt += `INSTRUÇÕES PARA A IA:\n`;
+      prompt += `Você é um desenvolvedor especialista em Ruby on Rails e arquitetura de monorepos com Engines.\n`;
+      prompt += `Com base na alteração recente realizada no módulo '${currentAnalysisData.engine}', veja abaixo a lista detalhada de todos os arquivos impactados em outros módulos e as referências exatas de código e métodos afetados.\n`;
+      prompt += `Por favor, analise a lista abaixo, identifique métodos renomeados/quebrados e forneça o código corrigido para cada um dos arquivos afetados.\n\n`;
+
+      prompt += `--------------------------------------------------------------------------------\n`;
+      prompt += `LISTA DE ARQUIVOS E LINHAS IMPACTADAS POR MÓDULO\n`;
+      prompt += `--------------------------------------------------------------------------------\n\n`;
+
+      let hasFiles = false;
+      Object.entries(engineImpacts).forEach(([targetName, engData]) => {
+        const filesList = engData.file_impacts_list || [];
+        if (filesList.length > 0) {
+          hasFiles = true;
+          prompt += `=== MÓDULO ALVO: [${targetName}] (${engData.impacted_files_count} arquivos impactados) ===\n\n`;
+          filesList.forEach(f => {
+            prompt += `  📌 Arquivo: ${f.file_path}\n`;
+            prompt += `     Severidade: ${f.overall_severity || 'LOW'}\n`;
+            prompt += `     Ocorrências Afetadas:\n`;
+            (f.matches || []).forEach(m => {
+              prompt += `       - Linha ${m.line_num} [${m.severity}]: Símbolo '${m.matched_term}' na linha:\n`;
+              prompt += `         > ${m.line_text.trim()}\n`;
+            });
+            prompt += `\n`;
+          });
+        }
+      });
+
+      if (!hasFiles) {
+        prompt += `Nenhum arquivo impactado em outros módulos.\n\n`;
+      }
+
+      prompt += `================================================================================\n`;
+      prompt += `FIM DO CONTEXTO DE IMPACTO DE CÓDIGO\n`;
+      prompt += `================================================================================\n`;
+
+      return prompt;
+    }
+
+    function downloadImpactsLogForAI() {
+      const content = generateImpactsAIPrompt();
+      if (!content) return;
+      const filename = `watcher_impactos_${currentAnalysisData.engine}_${new Date().toISOString().slice(0,10)}.txt`;
+      downloadFile(filename, content);
+      showToast('📥 Download Concluído', 'Arquivo de contexto de impactos baixado para sua IA!', 'info');
+    }
+
+    function generateRSpecAIPrompt() {
+      if (!currentTestResults || Object.keys(currentTestResults).length === 0) {
+        alert('Nenhum resultado de teste RSpec disponível ainda.');
+        return null;
+      }
+
+      const dateStr = new Date().toLocaleString('pt-BR');
+
+      let prompt = `================================================================================\n`;
+      prompt += `PROMPT PARA ASSISTENTE DE IA - LOG DE ERROS DE TESTES RSPEC\n`;
+      prompt += `================================================================================\n`;
+      prompt += `📅 Data de Execução: ${dateStr}\n`;
+      prompt += `================================================================================\n\n`;
+
+      prompt += `INSTRUÇÕES PARA A IA:\n`;
+      prompt += `Abaixo está o log completo da execução das suítes de testes RSpec em paralelo no monorepo Rails.\n`;
+      prompt += `Examine as falhas, mensagens de erro, NameErrors, NoMethodErrors e stack traces. Forneça o código corrigido para solucionar os testes com falha.\n\n`;
+
+      prompt += `--------------------------------------------------------------------------------\n`;
+      prompt += `RESUMO DOS RESULTADOS RSPEC POR MÓDULO\n`;
+      prompt += `--------------------------------------------------------------------------------\n\n`;
+
+      Object.entries(currentTestResults).forEach(([engName, res]) => {
+        const statusIcon = res.status === 'passed' ? '✅ PASSED' : (res.status === 'failed' ? '❌ FAILED' : '⚠️ SKIPPED/ERROR');
+        prompt += `• [${engName}]: ${statusIcon} (Specs: ${res.total_specs || 0}, Falhas: ${res.failures || 0})\n`;
+      });
+
+      prompt += `\n--------------------------------------------------------------------------------\n`;
+      prompt += `DETALHAMENTO DE LOGS E STACK TRACES DOS TESTES\n`;
+      prompt += `--------------------------------------------------------------------------------\n\n`;
+
+      Object.entries(currentTestResults).forEach(([engName, res]) => {
+        prompt += `================================================================================\n`;
+        prompt += `SAÍDA TERMINAL DA ENGINE: [${engName}]\n`;
+        prompt += `Status: ${res.status.toUpperCase()} | Código Saída: ${res.exit_code}\n`;
+        prompt += `================================================================================\n`;
+        prompt += `${res.output || 'Nenhuma saída de terminal capturada.'}\n\n`;
+      });
+
+      prompt += `================================================================================\n`;
+      prompt += `FIM DO LOG DE ERROS RSPEC\n`;
+      prompt += `================================================================================\n`;
+
+      return prompt;
+    }
+
+    function downloadRSpecLogForAI() {
+      const content = generateRSpecAIPrompt();
+      if (!content) return;
+      const filename = `watcher_rspec_erros_${new Date().toISOString().slice(0,10)}.txt`;
+      downloadFile(filename, content);
+      showToast('📥 Download Concluído', 'Log de erros do RSpec baixado para sua IA!', 'info');
+    }
+
+    function copyAIPromptToClipboard() {
+      let fullPrompt = '';
+      const impactContent = generateImpactsAIPrompt();
+      if (impactContent) fullPrompt += impactContent + '\n\n';
+
+      const rspecContent = generateRSpecAIPrompt();
+      if (rspecContent) fullPrompt += rspecContent;
+
+      if (!fullPrompt.trim()) {
+        alert('Execute uma análise de impactos ou testes antes de copiar o prompt.');
+        return;
+      }
+
+      navigator.clipboard.writeText(fullPrompt).then(() => {
+        showToast('📋 Copiado!', 'Prompt completo para IA copiado para a área de transferência!', 'success');
+      }).catch(err => {
+        alert('Erro ao copiar: ' + err);
+      });
+    }
+
     // RSpec Test Execution Logic
     let currentTestResults = null;
 
@@ -1836,7 +2044,10 @@
       if (res.status === 'failed') badgeStyle = 'background: rgba(248, 81, 73, 0.2); color: var(--accent-red);';
       else if (res.status === 'error' || res.status === 'timeout') badgeStyle = 'background: rgba(210, 153, 34, 0.2); color: var(--accent-yellow);';
 
+      html += `<div style="display: flex; gap: 0.5rem; align-items: center;">`;
+      html += `<button class="btn-secondary" style="font-size: 0.78rem; padding: 0.25rem 0.65rem; border-color: rgba(210, 153, 34, 0.4); color: var(--accent-yellow);" onclick="downloadRSpecLogForAI()" title="Baixar todos os logs do RSpec para enviar à sua IA">🤖 Baixar Logs IA (.txt)</button>`;
       html += `<div style="padding: 0.3rem 0.8rem; border-radius: 6px; font-weight: 700; font-size: 0.85rem; ${badgeStyle}">${(res.status || 'unknown').toUpperCase()} | ${res.total_examples || 0} Exemplos, ${res.failures_count || 0} Falhas</div>`;
+      html += `</div>`;
       html += `</div>`;
 
       if (res.failures && res.failures.length > 0) {
