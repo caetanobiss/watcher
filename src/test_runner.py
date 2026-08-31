@@ -111,6 +111,34 @@ class TestRunner:
                 pass
         return max(count, len(spec_files), 1)
 
+    def _resolve_impacted_specs(self, engine_path: str, spec_files: List[str]) -> List[str]:
+        """
+        Maps impacted source files (e.g. app/models/daily_balance.rb) to actual spec test files
+        (e.g. spec/models/daily_balance_spec.rb). Never returns raw application source files.
+        """
+        valid_specs = []
+        for sf in spec_files or []:
+            possible_paths = []
+            if sf.startswith("spec/") or sf.endswith("_spec.rb"):
+                possible_paths.append(sf)
+            elif sf.startswith("app/"):
+                possible_paths.append(re.sub(r'^app/', 'spec/', re.sub(r'\.rb$', '_spec.rb', sf)))
+                if sf.startswith("app/models/concerns/"):
+                    possible_paths.append(re.sub(r'^app/models/concerns/', 'spec/concerns/', re.sub(r'\.rb$', '_spec.rb', sf)))
+                elif sf.startswith("app/controllers/"):
+                    possible_paths.append(re.sub(r'^app/controllers/', 'spec/requests/', re.sub(r'_controller\.rb$', '_request_spec.rb', sf)))
+                    possible_paths.append(re.sub(r'^app/controllers/', 'spec/requests/', re.sub(r'\.rb$', '_spec.rb', sf)))
+            else:
+                possible_paths.append(f"spec/{re.sub(r'\.rb$', '_spec.rb', sf)}")
+
+            for p in possible_paths:
+                if (p.startswith("spec/") or p.endswith("_spec.rb")) and not p.startswith("app/"):
+                    if os.path.exists(os.path.join(engine_path, p)):
+                        if p not in valid_specs:
+                            valid_specs.append(p)
+
+        return valid_specs
+
     def run_engine_tests(self, engine_name: str, scope: str = "all", spec_files: List[str] = None) -> Dict[str, Any]:
         """
         Runs RSpec tests for a specific engine.
@@ -137,23 +165,27 @@ class TestRunner:
 
         cmd_args = []
 
-        if scope == "impacted_only" and spec_files:
-            valid_specs = []
-            for sf in spec_files:
-                possible_paths = [sf]
-                if sf.startswith("app/"):
-                    possible_paths.append(re.sub(r'^app/', 'spec/', re.sub(r'\.rb$', '_spec.rb', sf)))
-                elif not sf.startswith("spec/"):
-                    possible_paths.append(f"spec/{sf}")
-                    possible_paths.append(f"spec/{re.sub(r'\.rb$', '_spec.rb', sf)}")
-
-                for p in possible_paths:
-                    if os.path.exists(os.path.join(engine_path, p)):
-                        if p not in valid_specs:
-                            valid_specs.append(p)
-
-            if valid_specs:
-                cmd_args = valid_specs
+        if scope == "impacted_only":
+            if spec_files:
+                valid_specs = self._resolve_impacted_specs(engine_path, spec_files)
+                if valid_specs:
+                    cmd_args = valid_specs
+                else:
+                    return {
+                        "engine": engine_name,
+                        "status": "skipped",
+                        "message": f"Nenhum arquivo _spec.rb correspondente foi encontrado em spec/ para os arquivos impactados no módulo {engine_name}.",
+                        "raw_output": f"Escopo 'Apenas Impactados': Nenhum spec correspondente encontrado em spec/ para os {len(spec_files)} arquivos alterados.",
+                        "failures": []
+                    }
+            else:
+                return {
+                    "engine": engine_name,
+                    "status": "skipped",
+                    "message": f"Nenhum arquivo impactado registrado para o módulo {engine_name}.",
+                    "raw_output": "Nenhum arquivo impactado para testar neste módulo.",
+                    "failures": []
+                }
 
         if not cmd_args:
             if scope in ["models", "services", "builders", "queries", "requests", "jobs", "validators"]:
@@ -236,23 +268,33 @@ class TestRunner:
 
         cmd_args = []
 
-        if scope == "impacted_only" and spec_files:
-            valid_specs = []
-            for sf in spec_files:
-                possible_paths = [sf]
-                if sf.startswith("app/"):
-                    possible_paths.append(re.sub(r'^app/', 'spec/', re.sub(r'\.rb$', '_spec.rb', sf)))
-                elif not sf.startswith("spec/"):
-                    possible_paths.append(f"spec/{sf}")
-                    possible_paths.append(f"spec/{re.sub(r'\.rb$', '_spec.rb', sf)}")
-
-                for p in possible_paths:
-                    if os.path.exists(os.path.join(engine_path, p)):
-                        if p not in valid_specs:
-                            valid_specs.append(p)
-
-            if valid_specs:
-                cmd_args = valid_specs
+        if scope == "impacted_only":
+            if spec_files:
+                valid_specs = self._resolve_impacted_specs(engine_path, spec_files)
+                if valid_specs:
+                    cmd_args = valid_specs
+                else:
+                    res = {
+                        "engine": engine_name,
+                        "status": "skipped",
+                        "message": f"Nenhum arquivo _spec.rb correspondente foi encontrado em spec/ para os arquivos impactados no módulo {engine_name}.",
+                        "raw_output": f"Escopo 'Apenas Impactados': Nenhum spec correspondente encontrado em spec/ para os {len(spec_files)} arquivos alterados.",
+                        "failures": []
+                    }
+                    if progress_callback:
+                        progress_callback({"type": "engine_complete", "engine": engine_name, "result": res})
+                    return res
+            else:
+                res = {
+                    "engine": engine_name,
+                    "status": "skipped",
+                    "message": f"Nenhum arquivo impactado registrado para o módulo {engine_name}.",
+                    "raw_output": "Nenhum arquivo impactado para testar neste módulo.",
+                    "failures": []
+                }
+                if progress_callback:
+                    progress_callback({"type": "engine_complete", "engine": engine_name, "result": res})
+                return res
 
         if not cmd_args:
             if scope in ["models", "services", "builders", "queries", "requests", "jobs", "validators"]:
