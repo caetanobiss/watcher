@@ -2037,7 +2037,7 @@
       const scope = document.getElementById('specScopeSelect').value;
       if (!sourceEngine) return;
 
-      const specFiles = getImpactedSpecFiles(sourceEngine);
+      const specFiles = scope === 'impacted_only' ? getImpactedSpecFiles(sourceEngine) : null;
       executeTests([{ engine: sourceEngine, scope: scope, spec_files: specFiles }]);
     }
 
@@ -2051,7 +2051,7 @@
         reqs.push({
           engine: sourceEngine,
           scope: scope,
-          spec_files: getImpactedSpecFiles(sourceEngine)
+          spec_files: scope === 'impacted_only' ? getImpactedSpecFiles(sourceEngine) : null
         });
       }
 
@@ -2060,7 +2060,7 @@
           reqs.push({
             engine: box.value,
             scope: scope,
-            spec_files: getImpactedSpecFiles(box.value)
+            spec_files: scope === 'impacted_only' ? getImpactedSpecFiles(box.value) : null
           });
         }
       });
