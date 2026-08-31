@@ -2077,25 +2077,57 @@
     let activeTestAbortController = null;
 
     async function cancelTestExecution() {
+      const cancelBtn = document.getElementById('cancelTestsBtn');
+      if (cancelBtn) {
+        cancelBtn.disabled = true;
+        cancelBtn.style.opacity = '0.7';
+        cancelBtn.style.cursor = 'not-allowed';
+        cancelBtn.innerHTML = '<span class="spinner"></span> Cancelando...';
+      }
+
       if (currentTestTimerInterval) {
         clearInterval(currentTestTimerInterval);
         currentTestTimerInterval = null;
       }
+
+      // 1. Send cancellation request to backend first so it kills OS process group immediately
+      try {
+        await fetch('/api/cancel-tests', { method: 'POST' });
+      } catch (e) {
+        console.error('Error cancelling tests on server:', e);
+      }
+
+      // 2. Abort client stream connection
       if (activeTestAbortController) {
         activeTestAbortController.abort();
         activeTestAbortController = null;
       }
-      try {
-        await fetch('/api/cancel-tests', { method: 'POST' });
-      } catch (e) {
-        console.error('Error cancelling tests:', e);
-      }
+
       setScannerLoading(false);
+
       const tabsHeader = document.getElementById('testTabsHeader');
       const tabContent = document.getElementById('testTabContent');
-      if (tabsHeader) tabsHeader.innerHTML = '<div style="color: var(--accent-orange); padding: 0.5rem; font-weight: 600;">🚫 Execução cancelada pelo usuário.</div>';
-      if (tabContent) tabContent.innerHTML = '<div style="color: var(--text-muted); padding: 1.5rem; text-align: center;">A execução da suíte de testes RSpec foi interrompida.</div>';
-      showToast('🚫 Testes Cancelados', 'A execução dos testes RSpec foi cancelada.', 'info');
+
+      if (tabsHeader) {
+        tabsHeader.innerHTML = '<div style="color: var(--accent-orange); padding: 0.5rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">🛑 Execução cancelada pelo usuário.</div>';
+      }
+
+      if (tabContent) {
+        tabContent.innerHTML = `
+          <div style="padding: 2.5rem 1.5rem; text-align: center; background: var(--panel-bg); border-radius: 8px; border: 1px dashed var(--panel-border); margin: 1rem 0;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">🛑</div>
+            <h4 style="color: var(--text-bright); margin-bottom: 0.5rem; font-size: 1.1rem; font-weight: 700;">Execução dos Testes Cancelada</h4>
+            <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 500px; margin: 0 auto 1.25rem;">
+              A suíte de testes RSpec foi interrompida com sucesso e todos os processos no servidor foram finalizados.
+            </p>
+            <button class="btn-secondary" onclick="document.getElementById('testResultsContainer').style.display='none'" style="margin: 0 auto;">
+              Fechar Painel de Testes
+            </button>
+          </div>
+        `;
+      }
+
+      showToast('🛑 Testes Cancelados', 'A execução dos testes RSpec foi cancelada com sucesso.', 'warning');
     }
 
     async function executeTests(engineRequests) {

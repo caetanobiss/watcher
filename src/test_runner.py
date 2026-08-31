@@ -55,6 +55,11 @@ class TestRunner:
                     except Exception:
                         pass
             self.active_processes.clear()
+        
+        try:
+            subprocess.run(["pkill", "-9", "-f", "rspec"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        except Exception:
+            pass
 
     def get_cached_spec_info(self, engine_name: str, scope_key: str, cmd_args: List[str]) -> Dict[str, Any]:
         """Retrieves cached total examples & last duration if available, else scans spec files."""
