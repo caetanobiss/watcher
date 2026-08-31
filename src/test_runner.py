@@ -3,8 +3,13 @@ import subprocess
 import re
 import json
 import time
+import select
+import signal
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Any
+
+from src.config import get_default_root_dir
 
 CACHE_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test_cache.json")
 
@@ -26,17 +31,13 @@ def save_test_cache(cache_data: Dict[str, Any]):
     except Exception:
         pass
 
-import signal
-import threading
-
-from src.config import get_default_root_dir
-
 class TestRunner:
     """Runs RSpec tests in parallel for selected Rails engines and parses execution results."""
 
     def __init__(self, root_dir: str = None):
         self.root_dir = get_default_root_dir(root_dir)
         self.active_processes = {}
+        self.active_fds = set()
         self.active_processes_lock = threading.Lock()
         self.is_cancelled = False
 
@@ -54,11 +55,47 @@ class TestRunner:
                     except Exception:
                         pass
             self.active_processes.clear()
+
+            for fd in list(self.active_fds):
+                try:
+                    os.close(fd)
+                except Exception:
+                    pass
+            self.active_fds.clear()
         
         try:
             subprocess.run(["pkill", "-9", "-f", "rspec"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
         except Exception:
             pass
+
+    def _resolve_scope_args(self, engine_path: str, spec_dir: str, scope: str) -> List[str]:
+        """Resolves RSpec spec path arguments for a specific scope (services, models, etc.)."""
+        if scope == "all" or not scope:
+            return ["spec"]
+
+        if scope in ["models", "services", "builders", "queries", "requests", "jobs", "validators"]:
+            candidates = [
+                os.path.join(spec_dir, scope),
+                os.path.join(spec_dir, "app", scope),
+                os.path.join(spec_dir, "unit", scope),
+                os.path.join(spec_dir, os.path.basename(engine_path), scope)
+            ]
+            for cand in candidates:
+                if os.path.exists(cand):
+                    return [os.path.relpath(cand, engine_path)]
+
+            # Check matching files inside spec/ directory
+            singular = scope[:-1] if scope.endswith('s') else scope
+            matched = []
+            for root, _, files in os.walk(spec_dir):
+                for f in files:
+                    f_lower = f.lower()
+                    if f_lower.endswith(f"_{singular}_spec.rb") or f_lower.endswith(f"_{scope}_spec.rb") or f"/{scope}/" in root:
+                        matched.append(os.path.relpath(os.path.join(root, f), engine_path))
+
+            return matched
+
+        return ["spec"]
 
     def get_cached_spec_info(self, engine_name: str, scope_key: str, cmd_args: List[str]) -> Dict[str, Any]:
         """Retrieves cached total examples & last duration if available, else scans spec files."""
@@ -301,23 +338,18 @@ class TestRunner:
                 return res
 
         if not cmd_args:
-            if scope in ["models", "services", "builders", "queries", "requests", "jobs", "validators"]:
-                target_sub = os.path.join(spec_dir, scope)
-                if os.path.exists(target_sub):
-                    cmd_args = [f"spec/{scope}"]
-                else:
-                    res = {
-                        "engine": engine_name,
-                        "status": "skipped",
-                        "message": f"Diretório spec/{scope} não existe em {engine_name}.",
-                        "raw_output": f"Subdiretório spec/{scope} não encontrado no módulo {engine_name}.",
-                        "failures": []
-                    }
-                    if progress_callback:
-                        progress_callback({"type": "engine_complete", "engine": engine_name, "result": res})
-                    return res
-            else:
-                cmd_args = ["spec"]
+            cmd_args = self._resolve_scope_args(engine_path, spec_dir, scope)
+            if not cmd_args:
+                res = {
+                    "engine": engine_name,
+                    "status": "skipped",
+                    "message": f"Nenhum arquivo de teste para o escopo '{scope}' foi encontrado no módulo {engine_name}.",
+                    "raw_output": f"Escopo '{scope}': Nenhum subdiretório spec/{scope} ou arquivo *_spec.rb correspondente foi encontrado em {engine_name}.",
+                    "failures": []
+                }
+                if progress_callback:
+                    progress_callback({"type": "engine_complete", "engine": engine_name, "result": res})
+                return res
 
         self.is_cancelled = False
         scope_key = scope if scope != "impacted_only" else f"impacted_{len(spec_files or [])}"
@@ -362,6 +394,7 @@ class TestRunner:
 
             with self.active_processes_lock:
                 self.active_processes[engine_name] = proc
+                self.active_fds.add(master_fd)
 
             last_update_time = 0
 
@@ -371,10 +404,27 @@ class TestRunner:
                         pgid = os.getpgid(proc.pid)
                         os.killpg(pgid, signal.SIGKILL)
                     except Exception:
-                        pass
+                        try:
+                            proc.kill()
+                        except Exception:
+                            pass
                     break
 
                 try:
+                    r, _, _ = select.select([master_fd], [], [], 0.05)
+                    if not r:
+                        if proc.poll() is not None:
+                            while True:
+                                r_rem, _, _ = select.select([master_fd], [], [], 0.01)
+                                if not r_rem:
+                                    break
+                                rem_data = os.read(master_fd, 4096)
+                                if not rem_data:
+                                    break
+                                raw_chunks.append(rem_data.decode('utf-8', errors='replace'))
+                            break
+                        continue
+
                     data = os.read(master_fd, 1024)
                     if not data:
                         break
@@ -403,10 +453,15 @@ class TestRunner:
                         percent = min(99, int((completed / effective_total) * 100)) if effective_total > 0 else 0
                         elapsed = round(now - start_time, 1)
 
+                        all_text = "".join(raw_chunks).strip()
+                        last_line = all_text.splitlines()[-1] if all_text.splitlines() else "Executando..."
+                        if len(last_line) > 80:
+                            last_line = last_line[:77] + "..."
+
                         spec_msg = (
-                            f"Executando specs em [{engine_name}] ({completed} executados)..."
+                            f"{last_line} ({completed} executados)"
                             if not cached_info.get("is_cached")
-                            else f"Executando specs em [{engine_name}] ({completed}/{effective_total})..."
+                            else f"{last_line} ({completed}/{effective_total})"
                         )
 
                         progress_callback({
@@ -437,7 +492,7 @@ class TestRunner:
                     progress_callback({"type": "engine_complete", "engine": engine_name, "result": res})
                 return res
 
-            proc.wait(timeout=300)
+            proc.wait(timeout=5)
             raw_output = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', "".join(raw_chunks))
             parsed = self._parse_rspec_output(raw_output, proc.returncode)
             parsed["engine"] = engine_name

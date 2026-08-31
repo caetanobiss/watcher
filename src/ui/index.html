@@ -2091,12 +2091,10 @@
     let activeTestAbortController = null;
 
     async function cancelTestExecution() {
-      const cancelBtn = document.getElementById('cancelTestsBtn');
-      if (cancelBtn) {
-        cancelBtn.disabled = true;
-        cancelBtn.style.opacity = '0.7';
-        cancelBtn.style.cursor = 'not-allowed';
-        cancelBtn.innerHTML = '<span class="spinner"></span> Cancelando...';
+      // 1. Abort client stream connection immediately
+      if (activeTestAbortController) {
+        activeTestAbortController.abort();
+        activeTestAbortController = null;
       }
 
       if (currentTestTimerInterval) {
@@ -2104,20 +2102,14 @@
         currentTestTimerInterval = null;
       }
 
-      // 1. Send cancellation request to backend first so it kills OS process group immediately
-      try {
-        await fetch('/api/cancel-tests', { method: 'POST' });
-      } catch (e) {
-        console.error('Error cancelling tests on server:', e);
-      }
-
-      // 2. Abort client stream connection
-      if (activeTestAbortController) {
-        activeTestAbortController.abort();
-        activeTestAbortController = null;
-      }
-
       setScannerLoading(false);
+
+      const cancelBtn = document.getElementById('cancelTestsBtn');
+      if (cancelBtn) {
+        cancelBtn.disabled = true;
+        cancelBtn.style.opacity = '0.7';
+        cancelBtn.style.cursor = 'not-allowed';
+      }
 
       const tabsHeader = document.getElementById('testTabsHeader');
       const tabContent = document.getElementById('testTabContent');
@@ -2132,7 +2124,7 @@
             <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">🛑</div>
             <h4 style="color: var(--text-bright); margin-bottom: 0.5rem; font-size: 1.1rem; font-weight: 700;">Execução dos Testes Cancelada</h4>
             <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 500px; margin: 0 auto 1.25rem;">
-              A suíte de testes RSpec foi interrompida com sucesso e todos os processos no servidor foram finalizados.
+              A suíte de testes RSpec foi interrompida instantaneamente e todos os processos no servidor foram finalizados.
             </p>
             <button class="btn-secondary" onclick="document.getElementById('testResultsContainer').style.display='none'" style="margin: 0 auto;">
               Fechar Painel de Testes
@@ -2142,6 +2134,9 @@
       }
 
       showToast('🛑 Testes Cancelados', 'A execução dos testes RSpec foi cancelada com sucesso.', 'warning');
+
+      // 2. Send cancellation request to backend asynchronously without blocking UI
+      fetch('/api/cancel-tests', { method: 'POST' }).catch(e => console.error('Error cancelling tests on server:', e));
     }
 
     async function executeTests(engineRequests) {
@@ -2454,6 +2449,19 @@
           html += `📍 <span style="font-weight: 600;">${escapeHtml(f.location)}</span> - ${escapeHtml(f.description)}`;
           html += `</div>`;
         });
+        html += `</div>`;
+      }
+
+      if (res.status === 'error' || res.status === 'timeout' || res.status === 'skipped') {
+        const isSkipped = res.status === 'skipped';
+        const bgCol = isSkipped ? 'rgba(210, 153, 34, 0.12)' : 'rgba(248, 81, 73, 0.15)';
+        const borderCol = isSkipped ? 'rgba(210, 153, 34, 0.4)' : 'rgba(248, 81, 73, 0.5)';
+        const icon = isSkipped ? '⚠️' : '🚨';
+        const title = isSkipped ? 'Aviso de Execução (Testes Pulados)' : 'Erro na Inicialização / Execução do RSpec';
+        
+        html += `<div style="background: ${bgCol}; border: 1px solid ${borderCol}; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1rem;">`;
+        html += `<div style="font-weight: 700; color: var(--text-bright); font-size: 0.95rem; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.5rem;">${icon} ${title}</div>`;
+        html += `<div style="font-size: 0.85rem; color: var(--text-muted); font-family: var(--font-mono); white-space: pre-wrap;">${escapeHtml(res.message || 'Ocorreu um problema ao rodar o RSpec para esta engine.')}</div>`;
         html += `</div>`;
       }
 

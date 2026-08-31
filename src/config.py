@@ -1,7 +1,7 @@
 import os
 import json
 
-VERSION = "1.3.0"
+VERSION = "1.3.1"
 LAST_UPDATE = "31/08/2026"
 
 def get_default_root_dir(root_dir: str = None) -> str:

@@ -6,6 +6,13 @@ This document tracks AI-assisted session changes, architectural decisions, and v
 
 ## 📌 Version History & Session Log
 
+### [v1.3.1] - 2026-08-31
+- **Context & Problem:** (1) Test cancellation was delayed by up to 20 seconds because `os.read(master_fd, 1024)` in `test_runner.py` was a blocking system call. (2) Scope filtering (e.g. `services`) failed or skipped if `spec/services` didn't exist directly at the top level of `spec/`. (3) RSpec startup/initialization errors were not visibly alerting developers in the UI.
+- **Changes Made:**
+  1. **Instant Cancellation (Non-blocking PTY I/O):** Replaced blocking `os.read` with `select.select([master_fd], [], [], 0.05)` (50ms non-blocking polling loop). When the user clicks Cancel, Python checks `self.is_cancelled` in <50ms and sends `SIGKILL` to all OS process groups immediately. Frontend client connection is aborted in 0ms.
+  2. **Multi-Location Scope Path Resolution (`_resolve_scope_args`):** Test runner now checks `spec/<scope>`, `spec/app/<scope>`, `spec/unit/<scope>`, `spec/<engine>/<scope>` and searches recursively for `*_spec.rb` matching the requested scope.
+  3. **High-Visibility Error & Skip Banners:** Added explicit red/yellow Alert Banners in the UI (`index.html`) when RSpec fails to start, encounters gems/DB errors, or when specs are skipped, making test execution problems immediately obvious to the developer.
+
 ### [v1.3.0] - 2026-08-31
 - **Context & Problem:** Watcher was moved out of `workspace/auriga_project/watcher` into `workspace/watcher`. Moving it caused relative path lookup failures because `os.path.dirname(watcher_dir)` pointed to `workspace/` instead of `auriga_project/`.
 - **Changes Made:**
