@@ -293,7 +293,6 @@ class TestRunner:
         try:
             env = os.environ.copy()
             env["PYTHONUNBUFFERED"] = "1"
-            env["RUBYOPT"] = "-e '$stdout.sync = true; $stderr.sync = true'"
             
             proc = subprocess.Popen(
                 command,
