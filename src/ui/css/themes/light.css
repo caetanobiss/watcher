@@ -1,0 +1,105 @@
+/* Theme 4: Light Clean (Modo Claro Premium) */
+body.theme-light {
+  --bg-dark: #f0f4f8;
+  --panel-bg: #ffffff;
+  --panel-border: #cbd5e1;
+  --subpanel-bg: #f8fafc;
+  --input-bg: #ffffff;
+  --chip-bg: #f1f5f9;
+  --table-header-bg: #f1f5f9;
+  --code-bg: #f8fafc;
+  --terminal-bg: #f8fafc;
+  --btn-sec-bg: #ffffff;
+  --btn-sec-text: #0f172a;
+  --btn-sec-border: #cbd5e1;
+  --btn-sec-hover: #f1f5f9;
+  --text-main: #334155;
+  --text-bright: #0f172a;
+  --text-muted: #64748b;
+  --accent-blue: #0284c7;
+  --accent-purple: #7c3aed;
+  --accent-green: #16a34a;
+  --accent-yellow: #ca8a04;
+  --accent-red: #dc2626;
+  --card-glow: 0 8px 24px rgba(148, 163, 184, 0.14);
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  background-image: 
+    radial-gradient(at 50% 0%, rgba(2, 132, 199, 0.06) 0px, transparent 60%);
+}
+
+body.theme-light::before {
+  opacity: 0.08 !important;
+  mix-blend-mode: multiply !important;
+}
+
+body.theme-light select,
+body.theme-light input,
+body.theme-light textarea {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+body.theme-light select option {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+body.theme-light header {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+}
+
+body.theme-light .stat-card,
+body.theme-light .section-card,
+body.theme-light .modal-content {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 8px 24px rgba(148, 163, 184, 0.12) !important;
+}
+
+body.theme-light th {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.theme-light tr:hover td {
+  background: rgba(2, 132, 199, 0.04) !important;
+}
+
+body.theme-light td {
+  border-color: #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+body.theme-light .code-block {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.theme-light #impactedCheckboxes {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.theme-light #testTabContent,
+body.theme-light #mdTextarea {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.theme-light .btn-secondary {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 2px 6px rgba(148, 163, 184, 0.1) !important;
+}
+
+body.theme-light .btn-secondary:hover {
+  background: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+}

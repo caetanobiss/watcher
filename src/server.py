@@ -112,6 +112,21 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
                 self.wfile.write(content)
             else:
                 self._send_json({"error": "Mechanicus background file not found"}, status=404)
+        elif path.startswith("/css/"):
+            rel_path = path[5:]
+            css_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui", "css", rel_path)
+            css_file_path = os.path.abspath(css_file_path)
+            css_base_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui", "css"))
+            if css_file_path.startswith(css_base_dir) and os.path.exists(css_file_path) and os.path.isfile(css_file_path):
+                with open(css_file_path, "rb") as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/css; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
+            else:
+                self._send_json({"error": "CSS file not found"}, status=404)
         else:
             self._send_json({"error": "Endpoint not found"}, status=404)
 

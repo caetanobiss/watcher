@@ -1,0 +1,177 @@
+/* Main Layouts, Grid Systems, Modals & Toast Containers */
+header, main, footer, .modal {
+  position: relative;
+  z-index: 1;
+}
+
+/* Header */
+header {
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--panel-border);
+  padding: 0.85rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+  font-size: 1.2rem;
+  box-shadow: 0 0 15px rgba(88, 166, 255, 0.4);
+}
+
+.brand-title {
+  font-size: 2.3rem;
+  font-weight: 800;
+  color: var(--text-bright);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.brand-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.85rem;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.control-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Main Container */
+main {
+  flex: 1;
+  padding: 1.5rem 1rem;
+  max-width: 1920px;
+  margin: 0 auto;
+  width: 98%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Top Overview Grid (2x2 KPIs + Graph side-by-side) */
+.top-overview-grid {
+  display: grid;
+  grid-template-columns: 460px 1fr;
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+@media (max-width: 1300px) {
+  .top-overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stats-grid-2x2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.graph-section-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.graph-section-card .graph-container {
+  flex: 1;
+  min-height: 160px;
+}
+
+/* Modal / Drawer */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: var(--bg-dark);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 900px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--card-glow);
+}
+
+.modal-header {
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--panel-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.close-btn:hover {
+  color: var(--text-bright);
+}
+
+/* Toast Notifications Container */
+#toastContainer {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 9999;
+  pointer-events: none;
+}

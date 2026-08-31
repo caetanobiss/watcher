@@ -1,0 +1,64 @@
+/* Theme 3: Adeptus Mechanicus (Phosphor Cogitator Terminal) */
+body.theme-phosphor {
+  --bg-dark: #020a04;
+  --panel-bg: rgba(4, 18, 8, 0.94);
+  --panel-border: rgba(0, 255, 102, 0.45);
+  --subpanel-bg: #06160a;
+  --input-bg: #020b04;
+  --chip-bg: #06160a;
+  --table-header-bg: #06160a;
+  --code-bg: #020b04;
+  --terminal-bg: #010602;
+  --btn-sec-bg: #08200e;
+  --btn-sec-text: #66ff99;
+  --btn-sec-border: rgba(0, 255, 102, 0.45);
+  --btn-sec-hover: #0e3015;
+  --text-main: #00ff66;
+  --text-bright: #66ff99;
+  --text-muted: #1e7033;
+  --accent-blue: #33ff77;
+  --accent-purple: #99ffbb;
+  --accent-green: #00ff66;
+  --accent-yellow: #ffff55;
+  --accent-red: #ff3344;
+  --card-glow: 0 0 20px rgba(0, 255, 102, 0.25);
+  --font-sans: 'Share Tech Mono', 'JetBrains Mono', 'Courier New', monospace;
+  --font-mono: 'Share Tech Mono', 'Consolas', monospace;
+  background-image: 
+    radial-gradient(at 50% 0%, rgba(0, 255, 102, 0.12) 0px, transparent 60%);
+}
+
+body.theme-phosphor::before {
+  background-image: url('/assets/bg_mechanicus.png') !important;
+  opacity: 0.65 !important;
+  mix-blend-mode: screen !important;
+}
+
+body.theme-phosphor::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.38) 50%), linear-gradient(90deg, rgba(0, 255, 0, 0.03), rgba(0, 255, 102, 0.01), rgba(0, 255, 0, 0.03));
+  background-size: 100% 3px, 6px 100%;
+  pointer-events: none;
+  z-index: 99999;
+  opacity: 0.65;
+}
+
+body.theme-phosphor .brand-title,
+body.theme-phosphor .stat-value,
+body.theme-phosphor h2,
+body.theme-phosphor h3,
+body.theme-phosphor .btn-primary {
+  text-shadow: 0 0 8px rgba(0, 255, 102, 0.75), 0 0 18px rgba(0, 255, 102, 0.35);
+}
+
+body.theme-phosphor .stat-card,
+body.theme-phosphor .panel,
+body.theme-phosphor .modal-content {
+  border: 1px solid rgba(0, 255, 102, 0.45) !important;
+  box-shadow: inset 0 0 20px rgba(0, 255, 102, 0.08), 0 0 18px rgba(0, 255, 102, 0.18) !important;
+}

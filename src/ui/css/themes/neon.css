@@ -1,0 +1,28 @@
+/* Theme 2: Cyberpunk Neon */
+body.theme-neon {
+  --bg-dark: #07080e;
+  --panel-bg: rgba(15, 17, 26, 0.92);
+  --panel-border: rgba(0, 243, 255, 0.35);
+  --subpanel-bg: #0e1224;
+  --input-bg: #090c18;
+  --chip-bg: #0e1224;
+  --table-header-bg: #0e1224;
+  --code-bg: #090c18;
+  --terminal-bg: #050710;
+  --btn-sec-bg: #121730;
+  --btn-sec-text: #ffffff;
+  --btn-sec-border: rgba(0, 243, 255, 0.35);
+  --btn-sec-hover: #1a2245;
+  --text-main: #d8f0ff;
+  --text-bright: #ffffff;
+  --text-muted: #6e8fa8;
+  --accent-blue: #00f3ff;
+  --accent-purple: #ff007f;
+  --accent-green: #00ff99;
+  --accent-yellow: #ffe600;
+  --accent-red: #ff0055;
+  --card-glow: 0 0 20px rgba(0, 243, 255, 0.15);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(0, 243, 255, 0.12) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(255, 0, 127, 0.12) 0px, transparent 50%);
+}

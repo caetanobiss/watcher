@@ -6,6 +6,15 @@ This document tracks AI-assisted session changes, architectural decisions, and v
 
 ## 📌 Version History & Session Log
 
+### [v1.3.5] - 2026-08-31
+- **Context & Problem:** `src/ui/index.html` contained over 1,060 lines of inline CSS rules and theme overrides mixed into the HTML body.
+- **Changes Made:**
+  1. **Modular CSS Architecture (`src/ui/css/`):** Created `base.css` (variables and global resets), `layout.css` (header, grid, main, modal layouts), and `components.css` (buttons, cards, tables, scanner animations).
+  2. **Dedicated Theme Files (`src/ui/css/themes/`):** Separated theme definitions into individual files (`dark.css`, `neon.css`, `phosphor.css`, `light.css`).
+  3. **Master Stylesheet (`src/ui/css/main.css`):** Consolidated all sub-stylesheets and themes via `@import`.
+  4. **Server Static CSS Support (`src/server.py`):** Added `/css/` static file handler with proper MIME type headers (`text/css`).
+  5. **File Size Reduction:** Reduced `index.html` from 2,590 lines (~100KB) to 1,525 lines (~65KB).
+
 ### [v1.3.4] - 2026-08-31
 - **Context & Problem:** Developer requested changing the primary Git branch naming convention from `main` to `master`.
 - **Changes Made:** Renamed local branch `main` to `master`, pushed `master` to remote `origin`, and updated tracking upstream to `origin/master`.
