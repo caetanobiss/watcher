@@ -26,6 +26,7 @@ def save_test_cache(cache_data: Dict[str, Any]):
     except Exception:
         pass
 
+import signal
 import threading
 
 class TestRunner:
@@ -38,18 +39,21 @@ class TestRunner:
         self.root_dir = os.path.abspath(root_dir)
         self.active_processes = {}
         self.active_processes_lock = threading.Lock()
+        self.is_cancelled = False
 
     def cancel_all_tests(self):
-        """Kills all running RSpec test subprocesses immediately."""
+        """Kills all running RSpec test subprocesses and process groups immediately."""
+        self.is_cancelled = True
         with self.active_processes_lock:
             for eng, proc in list(self.active_processes.items()):
                 try:
-                    proc.terminate()
-                    time.sleep(0.1)
-                    if proc.poll() is None:
-                        proc.kill()
+                    pgid = os.getpgid(proc.pid)
+                    os.killpg(pgid, signal.SIGKILL)
                 except Exception:
-                    pass
+                    try:
+                        proc.kill()
+                    except Exception:
+                        pass
             self.active_processes.clear()
 
     def get_cached_spec_info(self, engine_name: str, scope_key: str, cmd_args: List[str]) -> Dict[str, Any]:
@@ -269,6 +273,7 @@ class TestRunner:
             else:
                 cmd_args = ["spec"]
 
+        self.is_cancelled = False
         scope_key = scope if scope != "impacted_only" else f"impacted_{len(spec_files or [])}"
         cached_info = self.get_cached_spec_info(engine_name, scope_key, cmd_args)
         total_specs_estimated = cached_info["total_examples"]
@@ -279,6 +284,7 @@ class TestRunner:
                 "engine": engine_name,
                 "total_specs": total_specs_estimated,
                 "last_duration": cached_info.get("last_duration", 0),
+                "is_cached": cached_info.get("is_cached", False),
                 "scope_used": " ".join(cmd_args)
             })
 
@@ -303,7 +309,8 @@ class TestRunner:
                 stdout=slave_fd,
                 stderr=slave_fd,
                 close_fds=True,
-                env=env
+                env=env,
+                start_new_session=True
             )
             os.close(slave_fd)
 
@@ -313,6 +320,14 @@ class TestRunner:
             last_update_time = 0
 
             while True:
+                if self.is_cancelled:
+                    try:
+                        pgid = os.getpgid(proc.pid)
+                        os.killpg(pgid, signal.SIGKILL)
+                    except Exception:
+                        pass
+                    break
+
                 try:
                     data = os.read(master_fd, 1024)
                     if not data:
@@ -342,6 +357,12 @@ class TestRunner:
                         percent = min(99, int((completed / effective_total) * 100)) if effective_total > 0 else 0
                         elapsed = round(now - start_time, 1)
 
+                        spec_msg = (
+                            f"Executando specs em [{engine_name}] ({completed} executados)..."
+                            if not cached_info.get("is_cached")
+                            else f"Executando specs em [{engine_name}] ({completed}/{effective_total})..."
+                        )
+
                         progress_callback({
                             "type": "progress",
                             "engine": engine_name,
@@ -352,10 +373,23 @@ class TestRunner:
                             "pending": pending,
                             "percent": percent,
                             "elapsed": elapsed,
-                            "current_spec": f"Executando specs em [{engine_name}] ({completed}/{effective_total})..."
+                            "is_cached": cached_info.get("is_cached", False),
+                            "current_spec": spec_msg
                         })
                 except OSError:
                     break
+
+            if self.is_cancelled:
+                res = {
+                    "engine": engine_name,
+                    "status": "cancelled",
+                    "message": "Execução cancelada pelo usuário.",
+                    "raw_output": "".join(raw_chunks),
+                    "failures": []
+                }
+                if progress_callback:
+                    progress_callback({"type": "engine_complete", "engine": engine_name, "result": res})
+                return res
 
             proc.wait(timeout=300)
             raw_output = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', "".join(raw_chunks))
@@ -386,6 +420,7 @@ class TestRunner:
                     "pending": parsed.get("pending_count", 0),
                     "percent": 100,
                     "elapsed": elapsed_dur,
+                    "is_cached": True,
                     "current_spec": "Concluído!",
                     "last_line": "Suíte finalizada com sucesso."
                 })

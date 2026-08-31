@@ -2181,6 +2181,7 @@
       const remainingBadge = document.getElementById('scannerRemainingBadge');
       const liveLogText = document.getElementById('scannerLiveLogText');
 
+      const isCached = data.is_cached !== false;
       const completed = data.completed || 0;
       const total = data.total || 1;
       const percent = Math.min(100, Math.max(0, data.percent || Math.round((completed / total) * 100)));
@@ -2190,21 +2191,35 @@
 
       if (circle) {
         const circum = 326.7;
-        const offset = circum * (1 - percent / 100);
+        const offset = isCached ? circum * (1 - percent / 100) : circum * (1 - ((completed % 40) / 40));
         circle.style.strokeDashoffset = offset;
       }
 
       if (progressText) {
-        progressText.textContent = `${completed} / ${total} specs (${percent}%)`;
+        if (!isCached) {
+          progressText.textContent = `${completed} specs executados (1ª execução - calculando total)`;
+        } else {
+          progressText.textContent = `${completed} / ${total} specs (${percent}%)`;
+        }
       }
 
       if (progressBarFill) {
-        progressBarFill.style.width = `${percent}%`;
+        if (!isCached) {
+          progressBarFill.style.width = `${Math.min(95, Math.max(8, (completed % 40) * 2.5))}%`;
+        } else {
+          progressBarFill.style.width = `${percent}%`;
+        }
       }
 
       if (passedBadge) passedBadge.textContent = `🟢 ${passed} Passaram`;
       if (failedBadge) failedBadge.textContent = `🔴 ${failed} Falharam`;
-      if (remainingBadge) remainingBadge.textContent = `⏳ ${remaining} Restantes`;
+      if (remainingBadge) {
+        if (!isCached) {
+          remainingBadge.textContent = `⏳ Contando specs...`;
+        } else {
+          remainingBadge.textContent = `⏳ ${remaining} Restantes`;
+        }
+      }
 
       if (liveLogText && data.current_spec) {
         liveLogText.textContent = `► [${data.engine}] ${data.current_spec}`;
