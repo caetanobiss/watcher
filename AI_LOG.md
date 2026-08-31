@@ -6,6 +6,13 @@ This document tracks AI-assisted session changes, architectural decisions, and v
 
 ## 📌 Version History & Session Log
 
+### [v1.3.3] - 2026-08-31
+- **Context & Problem:** Developer reported requiring server restart and page reload for subsequent runs. Python's default `http.server.HTTPServer` is single-threaded; during long-running `/api/run-tests-stream` SSE streaming, the HTTP server loop was completely blocked and could not process incoming `/api/cancel-tests` or new test requests.
+- **Changes Made:**
+  1. **Multithreaded HTTP Server (`src/server.py`):** Converted `HTTPServer` to `ThreadedHTTPServer(socketserver.ThreadingMixIn, HTTPServer)` with `daemon_threads = True`. Every HTTP request now runs in an independent thread, allowing concurrent API calls, instant cancellations, and UI requests without blocking socket queues.
+  2. **Pre-flight Execution Cleanup (`reset_state_for_new_run` in `src/test_runner.py`):** Added cleanup before launching parallel test runs to kill any lingering processes/file descriptors and clear cancellation flags.
+  3. **Client Disconnect Detection:** Handled `BrokenPipeError` / `ConnectionResetError` in `send_sse` to automatically kill backend test processes if the client closes the SSE stream or aborts the connection.
+
 ### [v1.3.2] - 2026-08-31
 - **Context & Problem:** Running tests a second time without reloading the page caused execution to get stuck at `0 / 0 specs (0%)` and `Iniciando execução dos testes RSpec...`.
 - **Changes Made:**

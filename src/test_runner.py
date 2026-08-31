@@ -68,6 +68,11 @@ class TestRunner:
         except Exception:
             pass
 
+    def reset_state_for_new_run(self):
+        """Cleans up any dangling processes/fds and resets cancellation flag before starting new tests."""
+        self.cancel_all_tests()
+        self.is_cancelled = False
+
     def _resolve_scope_args(self, engine_path: str, spec_dir: str, scope: str) -> List[str]:
         """Resolves RSpec spec path arguments for a specific scope (services, models, etc.)."""
         if scope == "all" or not scope:
@@ -601,7 +606,7 @@ class TestRunner:
 
     def run_parallel_tests(self, engine_requests: List[Dict[str, Any]], max_workers: int = 4) -> Dict[str, Any]:
         """Runs RSpec tests in parallel across multiple engines using ThreadPoolExecutor."""
-        self.is_cancelled = False
+        self.reset_state_for_new_run()
         results = {}
         with ThreadPoolExecutor(max_workers=min(max_workers, len(engine_requests) or 1)) as executor:
             future_to_engine = {
@@ -630,7 +635,7 @@ class TestRunner:
 
     def run_parallel_tests_stream(self, engine_requests: List[Dict[str, Any]], progress_callback = None, max_workers: int = 4) -> Dict[str, Any]:
         """Runs RSpec tests in parallel streaming updates per engine."""
-        self.is_cancelled = False
+        self.reset_state_for_new_run()
         results = {}
         with ThreadPoolExecutor(max_workers=min(max_workers, len(engine_requests) or 1)) as executor:
             future_to_engine = {

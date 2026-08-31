@@ -2,6 +2,7 @@ import os
 import json
 import urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from socketserver import ThreadingMixIn
 from typing import Dict, Any
 
 from src.config import VERSION, LAST_UPDATE
@@ -266,10 +267,15 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         def send_sse(data_dict):
+            if self.test_runner.is_cancelled:
+                return
             try:
                 payload = f"data: {json.dumps(data_dict)}\n\n".encode('utf-8')
                 self.wfile.write(payload)
                 self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError, OSError):
+                # Connection dropped by client -> cancel tests immediately
+                self.test_runner.cancel_all_tests()
             except Exception:
                 pass
 
@@ -292,8 +298,9 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
         # Clean logging output
         return
 
-class ReusableHTTPServer(HTTPServer):
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     allow_reuse_address = True
+    daemon_threads = True
 
 def run_server(port: int = 3019):
     current_port = port
@@ -303,7 +310,7 @@ def run_server(port: int = 3019):
     for attempt in range(max_attempts):
         try:
             server_address = ('', current_port)
-            httpd = ReusableHTTPServer(server_address, WatcherHTTPHandler)
+            httpd = ThreadedHTTPServer(server_address, WatcherHTTPHandler)
             break
         except OSError as e:
             if e.errno == 98:
