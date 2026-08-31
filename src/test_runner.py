@@ -282,9 +282,12 @@ class TestRunner:
                 "scope_used": " ".join(cmd_args)
             })
 
+        import pty
+        master_fd, slave_fd = pty.openpty()
+
         command = ["bundle", "exec", "rspec", "--tty"] + cmd_args
         start_time = time.time()
-        raw_output_lines = []
+        raw_chunks = []
         completed = 0
         passed = 0
         failed = 0
@@ -297,52 +300,65 @@ class TestRunner:
             proc = subprocess.Popen(
                 command,
                 cwd=engine_path,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
+                stdout=slave_fd,
+                stderr=slave_fd,
+                close_fds=True,
                 env=env
             )
+            os.close(slave_fd)
 
             with self.active_processes_lock:
                 self.active_processes[engine_name] = proc
 
-            for line in proc.stdout:
-                raw_output_lines.append(line)
-                stripped = line.strip()
+            last_update_time = 0
 
-                if stripped.startswith(".") or stripped.startswith("F") or stripped.startswith("*"):
-                    for ch in stripped:
+            while True:
+                try:
+                    data = os.read(master_fd, 1024)
+                    if not data:
+                        break
+                    chunk = data.decode('utf-8', errors='replace')
+                    raw_chunks.append(chunk)
+
+                    has_new_spec = False
+                    for ch in chunk:
                         if ch == '.':
                             passed += 1
                             completed += 1
+                            has_new_spec = True
                         elif ch == 'F':
                             failed += 1
                             completed += 1
+                            has_new_spec = True
                         elif ch == '*':
                             pending += 1
                             completed += 1
+                            has_new_spec = True
 
-                if progress_callback and (completed > 0 or len(raw_output_lines) % 2 == 0):
-                    effective_total = max(total_specs_estimated, completed)
-                    percent = min(99, int((completed / effective_total) * 100)) if effective_total > 0 else 0
-                    elapsed = round(time.time() - start_time, 1)
+                    now = time.time()
+                    if progress_callback and (has_new_spec or completed == 0) and (now - last_update_time >= 0.08 or completed == total_specs_estimated):
+                        last_update_time = now
+                        effective_total = max(total_specs_estimated, completed)
+                        percent = min(99, int((completed / effective_total) * 100)) if effective_total > 0 else 0
+                        elapsed = round(now - start_time, 1)
 
-                    progress_callback({
-                        "type": "progress",
-                        "engine": engine_name,
-                        "completed": completed,
-                        "total": effective_total,
-                        "passed": passed,
-                        "failed": failed,
-                        "pending": pending,
-                        "percent": percent,
-                        "elapsed": elapsed,
-                        "current_spec": f"Executando suíte RSpec em [{engine_name}]..."
-                    })
+                        progress_callback({
+                            "type": "progress",
+                            "engine": engine_name,
+                            "completed": completed,
+                            "total": effective_total,
+                            "passed": passed,
+                            "failed": failed,
+                            "pending": pending,
+                            "percent": percent,
+                            "elapsed": elapsed,
+                            "current_spec": f"Executando specs em [{engine_name}] ({completed}/{effective_total})..."
+                        })
+                except OSError:
+                    break
 
             proc.wait(timeout=300)
-            raw_output = "".join(raw_output_lines)
+            raw_output = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', "".join(raw_chunks))
             parsed = self._parse_rspec_output(raw_output, proc.returncode)
             parsed["engine"] = engine_name
             parsed["scope_used"] = " ".join(cmd_args)
@@ -387,7 +403,7 @@ class TestRunner:
                 "engine": engine_name,
                 "status": "timeout",
                 "message": "Execução excedeu o tempo limite (5 minutos).",
-                "raw_output": "".join(raw_output_lines),
+                "raw_output": "".join(raw_chunks),
                 "failures": []
             }
             if progress_callback:
@@ -405,6 +421,10 @@ class TestRunner:
                 progress_callback({"type": "engine_complete", "engine": engine_name, "result": res})
             return res
         finally:
+            try:
+                os.close(master_fd)
+            except Exception:
+                pass
             with self.active_processes_lock:
                 self.active_processes.pop(engine_name, None)
 

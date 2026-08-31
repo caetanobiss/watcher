@@ -927,6 +927,23 @@
       animation: textPulse 1.4s ease-in-out infinite alternate;
     }
 
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2.5px solid rgba(0, 242, 254, 0.2);
+      border-top-color: var(--accent-blue);
+      border-right-color: var(--accent-purple);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     @keyframes textPulse {
       0% { opacity: 0.55; }
       100% { opacity: 1; }
