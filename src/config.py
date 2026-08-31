@@ -1,8 +1,31 @@
 import os
 import json
+import re
 
-VERSION = "1.3.1"
-LAST_UPDATE = "31/08/2026"
+def get_version_info():
+    """Reads VERSION file to get the latest version number string and date."""
+    version_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "VERSION")
+    latest_ver = "1.3.1"
+    latest_date = "31/08/2026"
+    if os.path.exists(version_file):
+        try:
+            with open(version_file, "r", encoding="utf-8") as f:
+                content = f.read()
+                ver_match = re.search(r'\[v?(\d+\.\d+\.\d+)\](?:\s*-\s*([\d\/]+|\d{4}-\d{2}-\d{2}))?', content)
+                if ver_match:
+                    latest_ver = ver_match.group(1)
+                    if ver_match.group(2):
+                        latest_date = ver_match.group(2)
+                else:
+                    first_line = content.strip().splitlines()[0]
+                    clean = re.sub(r'[^\d\.]', '', first_line)
+                    if clean:
+                        latest_ver = clean
+        except Exception:
+            pass
+    return latest_ver, latest_date
+
+VERSION, LAST_UPDATE = get_version_info()
 
 def get_default_root_dir(root_dir: str = None) -> str:
     """
