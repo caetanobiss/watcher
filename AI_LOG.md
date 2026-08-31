@@ -6,6 +6,10 @@ This document tracks AI-assisted session changes, architectural decisions, and v
 
 ## 📌 Version History & Session Log
 
+### [v1.3.4] - 2026-08-31
+- **Context & Problem:** Developer requested changing the primary Git branch naming convention from `main` to `master`.
+- **Changes Made:** Renamed local branch `main` to `master`, pushed `master` to remote `origin`, and updated tracking upstream to `origin/master`.
+
 ### [v1.3.3] - 2026-08-31
 - **Context & Problem:** Developer reported requiring server restart and page reload for subsequent runs. Python's default `http.server.HTTPServer` is single-threaded; during long-running `/api/run-tests-stream` SSE streaming, the HTTP server loop was completely blocked and could not process incoming `/api/cancel-tests` or new test requests.
 - **Changes Made:**
