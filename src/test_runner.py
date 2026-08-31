@@ -548,8 +548,10 @@ class TestRunner:
             })
 
         status = "passed" if exit_code == 0 and failures_count == 0 else "failed"
+        message = None
         if exit_code != 0 and total_examples == 0:
             status = "error"
+            message = f"Falha na execução do RSpec (Exit Code {exit_code}). Verifique a saída do terminal para detalhes do erro de inicialização ou dependências."
 
         return {
             "status": status,
@@ -559,6 +561,7 @@ class TestRunner:
             "pending_count": pending_count,
             "duration": duration,
             "failures": failures,
+            "message": message,
             "raw_output": raw_output
         }
 

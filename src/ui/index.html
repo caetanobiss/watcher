@@ -1920,34 +1920,60 @@
       const dateStr = new Date().toLocaleString('pt-BR');
 
       let prompt = `================================================================================\n`;
-      prompt += `PROMPT PARA ASSISTENTE DE IA - LOG DE ERROS DE TESTES RSPEC\n`;
+      prompt += `PROMPT PARA ASSISTENTE DE IA - LOG DE EXECUÇÃO E ERROS DE TESTES RSPEC\n`;
       prompt += `================================================================================\n`;
       prompt += `📅 Data de Execução: ${dateStr}\n`;
       prompt += `================================================================================\n\n`;
 
       prompt += `INSTRUÇÕES PARA A IA:\n`;
-      prompt += `Abaixo está o log completo da execução das suítes de testes RSpec em paralelo no monorepo Rails.\n`;
-      prompt += `Examine as falhas, mensagens de erro, NameErrors, NoMethodErrors e stack traces. Forneça o código corrigido para solucionar os testes com falha.\n\n`;
+      prompt += `Abaixo está o log completo da execução das suítes de testes RSpec no monorepo Rails.\n`;
+      prompt += `Examine as falhas, erros de inicialização, exceções de banco de dados, mensagens de erro e stack traces. Forneça uma análise de causa raiz e o código corrigido para solucionar os problemas.\n\n`;
 
       prompt += `--------------------------------------------------------------------------------\n`;
       prompt += `RESUMO DOS RESULTADOS RSPEC POR MÓDULO\n`;
       prompt += `--------------------------------------------------------------------------------\n\n`;
 
       Object.entries(currentTestResults).forEach(([engName, res]) => {
-        const statusIcon = res.status === 'passed' ? '✅ PASSED' : (res.status === 'failed' ? '❌ FAILED' : '⚠️ SKIPPED/ERROR');
-        prompt += `• [${engName}]: ${statusIcon} (Specs: ${res.total_specs || 0}, Falhas: ${res.failures || 0})\n`;
+        const total = res.total_examples || res.completed || 0;
+        const failures = res.failures_count || (res.failures ? res.failures.length : 0);
+        let statusIcon = '✅ PASSED';
+        if (res.status === 'failed') statusIcon = '❌ FAILED';
+        else if (res.status === 'error' || res.status === 'timeout') statusIcon = '💥 EXECUTION ERROR / CRASH';
+
+        prompt += `• [${engName}]: ${statusIcon} | Total Specs: ${total} | Falhas: ${failures} | Duração: ${res.duration || 'N/A'}\n`;
+        if (res.message) {
+          prompt += `  └─ Mensagem de Erro: ${res.message}\n`;
+        }
       });
 
       prompt += `\n--------------------------------------------------------------------------------\n`;
-      prompt += `DETALHAMENTO DE LOGS E STACK TRACES DOS TESTES\n`;
+      prompt += `DETALHAMENTO DE LOGS, SAÍDA DE TERMINAL E STACK TRACES DOS TESTES\n`;
       prompt += `--------------------------------------------------------------------------------\n\n`;
 
       Object.entries(currentTestResults).forEach(([engName, res]) => {
+        const total = res.total_examples || res.completed || 0;
+        const failures = res.failures_count || (res.failures ? res.failures.length : 0);
+        const exitCode = res.exit_code !== undefined ? res.exit_code : 'N/A';
+
         prompt += `================================================================================\n`;
-        prompt += `SAÍDA TERMINAL DA ENGINE: [${engName}]\n`;
-        prompt += `Status: ${res.status.toUpperCase()} | Código Saída: ${res.exit_code}\n`;
+        prompt += `SAÍDA DE TERMINAL DA ENGINE: [${engName}]\n`;
+        prompt += `Status: ${res.status.toUpperCase()} | Exit Code: ${exitCode} | Total Specs: ${total} | Falhas: ${failures}\n`;
+        prompt += `Escopo Executado: ${res.scope_used || 'spec'}\n`;
+        if (res.message) {
+          prompt += `Detalhe do Erro: ${res.message}\n`;
+        }
         prompt += `================================================================================\n`;
-        prompt += `${res.output || 'Nenhuma saída de terminal capturada.'}\n\n`;
+
+        if (res.failures && res.failures.length > 0) {
+          prompt += `--- FALHAS ESPECÍFICAS DETECTADAS (${res.failures.length}) ---\n`;
+          res.failures.forEach((f, idx) => {
+            prompt += `[${idx + 1}] Local: ${f.location}\n    Descrição: ${f.description}\n`;
+          });
+          prompt += `----------------------------------------------------------\n\n`;
+        }
+
+        const terminalOutput = res.raw_output || res.output || res.message || 'Nenhuma saída de terminal capturada.';
+        prompt += `${terminalOutput}\n\n`;
       });
 
       prompt += `================================================================================\n`;
