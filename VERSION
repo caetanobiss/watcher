@@ -1,3 +1,9 @@
+[1.3.2] - 31/08/2026
+- Correção de travamento na 2ª execução de testes: reset de `is_cancelled` na entrada do runner paralelo.
+- Desativação automática do Spring (`DISABLE_SPRING=1`) e desacoplamento de entrada (`stdin=DEVNULL`) para evitar lockouts em execuções repetidas.
+- Remoção correta de file descriptors PTY fechados (`active_fds.discard`).
+- Parsing resiliente de SSE por linhas no front-end e envio imediato de heartbeat de inicialização.
+
 [1.3.1] - 31/08/2026
 - Cancelamento instantâneo de testes RSpec via I/O não-bloqueante (select em PTY master).
 - Resolução dinâmica de escopos (services, models, etc.) em múltiplos caminhos (spec/services, spec/app/services, spec/unit/services, *_service_spec.rb).

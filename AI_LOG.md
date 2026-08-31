@@ -6,6 +6,14 @@ This document tracks AI-assisted session changes, architectural decisions, and v
 
 ## 📌 Version History & Session Log
 
+### [v1.3.2] - 2026-08-31
+- **Context & Problem:** Running tests a second time without reloading the page caused execution to get stuck at `0 / 0 specs (0%)` and `Iniciando execução dos testes RSpec...`.
+- **Changes Made:**
+  1. **Reset Cancellation Flag (`run_parallel_tests_stream`):** Ensured `self.is_cancelled = False` is explicitly reset at the master level before starting parallel thread workers.
+  2. **Disabled Spring & Decoupled Stdin (`src/test_runner.py`):** Added `env["DISABLE_SPRING"] = "1"` and `stdin=subprocess.DEVNULL` to `subprocess.Popen`. This prevents Spring daemon locks and terminal stdin blocking on subsequent test executions.
+  3. **File Descriptor Leak Fix:** Added `self.active_fds.discard(master_fd)` in the `finally:` block so closed PTY file descriptors are properly removed from the set.
+  4. **Robust Line-by-Line SSE Parser (`src/ui/index.html`):** Updated the frontend EventSource/reader to split chunks line-by-line (`chunk.split('\n')`), preventing JSON parse errors when multiple SSE payloads are received in a single chunk.
+
 ### [v1.3.1] - 2026-08-31
 - **Context & Problem:** (1) Test cancellation was delayed by up to 20 seconds because `os.read(master_fd, 1024)` in `test_runner.py` was a blocking system call. (2) Scope filtering (e.g. `services`) failed or skipped if `spec/services` didn't exist directly at the top level of `spec/`. (3) RSpec startup/initialization errors were not visibly alerting developers in the UI.
 - **Changes Made:**

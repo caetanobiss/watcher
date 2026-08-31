@@ -380,10 +380,12 @@ class TestRunner:
         try:
             env = os.environ.copy()
             env["PYTHONUNBUFFERED"] = "1"
+            env["DISABLE_SPRING"] = "1"
             
             proc = subprocess.Popen(
                 command,
                 cwd=engine_path,
+                stdin=subprocess.DEVNULL,
                 stdout=slave_fd,
                 stderr=slave_fd,
                 close_fds=True,
@@ -423,6 +425,38 @@ class TestRunner:
                                     break
                                 raw_chunks.append(rem_data.decode('utf-8', errors='replace'))
                             break
+
+                        now = time.time()
+                        if progress_callback and (now - last_update_time >= 0.5):
+                            last_update_time = now
+                            effective_total = max(total_specs_estimated, completed)
+                            percent = min(99, int((completed / effective_total) * 100)) if effective_total > 0 else 0
+                            elapsed = round(now - start_time, 1)
+
+                            all_text = "".join(raw_chunks).strip()
+                            last_line = all_text.splitlines()[-1] if all_text.splitlines() else f"Inicializando RSpec em [{engine_name}]..."
+                            if len(last_line) > 80:
+                                last_line = last_line[:77] + "..."
+
+                            spec_msg = (
+                                f"{last_line} ({completed} executados)"
+                                if not cached_info.get("is_cached")
+                                else f"{last_line} ({completed}/{effective_total})"
+                            )
+
+                            progress_callback({
+                                "type": "progress",
+                                "engine": engine_name,
+                                "completed": completed,
+                                "total": effective_total,
+                                "passed": passed,
+                                "failed": failed,
+                                "pending": pending,
+                                "percent": percent,
+                                "elapsed": elapsed,
+                                "is_cached": cached_info.get("is_cached", False),
+                                "current_spec": spec_msg
+                            })
                         continue
 
                     data = os.read(master_fd, 1024)
@@ -563,9 +597,11 @@ class TestRunner:
                 pass
             with self.active_processes_lock:
                 self.active_processes.pop(engine_name, None)
+                self.active_fds.discard(master_fd)
 
     def run_parallel_tests(self, engine_requests: List[Dict[str, Any]], max_workers: int = 4) -> Dict[str, Any]:
         """Runs RSpec tests in parallel across multiple engines using ThreadPoolExecutor."""
+        self.is_cancelled = False
         results = {}
         with ThreadPoolExecutor(max_workers=min(max_workers, len(engine_requests) or 1)) as executor:
             future_to_engine = {
@@ -594,6 +630,7 @@ class TestRunner:
 
     def run_parallel_tests_stream(self, engine_requests: List[Dict[str, Any]], progress_callback = None, max_workers: int = 4) -> Dict[str, Any]:
         """Runs RSpec tests in parallel streaming updates per engine."""
+        self.is_cancelled = False
         results = {}
         with ThreadPoolExecutor(max_workers=min(max_workers, len(engine_requests) or 1)) as executor:
             future_to_engine = {
