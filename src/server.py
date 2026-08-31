@@ -109,14 +109,17 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
             except Exception:
                 body = {}
             self._handle_analyze(body)
-        elif path == "/api/run-tests":
+        elif path in ["/api/run-tests", "/api/run-tests-stream"]:
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
             try:
                 body = json.loads(post_data.decode('utf-8'))
             except Exception:
                 body = {}
-            self._handle_run_tests(body)
+            if path == "/api/run-tests-stream":
+                self._handle_run_tests_stream(body)
+            else:
+                self._handle_run_tests(body)
         elif path == "/api/settings":
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
@@ -221,6 +224,33 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
             })
         except Exception as e:
             self._send_json({"status": "error", "message": str(e)}, status=500)
+
+    def _handle_run_tests_stream(self, body: Dict[str, Any]):
+        engines_req = body.get("engines", [])
+        if not engines_req:
+            self._send_json({"status": "error", "message": "Nenhum módulo selecionado para execução de testes."}, status=400)
+            return
+
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "keep-alive")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+
+        def send_sse(data_dict):
+            try:
+                payload = f"data: {json.dumps(data_dict)}\n\n".encode('utf-8')
+                self.wfile.write(payload)
+                self.wfile.flush()
+            except Exception:
+                pass
+
+        try:
+            results = self.test_runner.run_parallel_tests_stream(engines_req, progress_callback=send_sse, max_workers=4)
+            send_sse({"type": "complete", "results": results})
+        except Exception as e:
+            send_sse({"type": "error", "message": str(e)})
 
     def _send_json(self, data: Any, status: int = 200):
         body = json.dumps(data, indent=2).encode('utf-8')
