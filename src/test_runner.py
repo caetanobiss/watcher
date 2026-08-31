@@ -6,6 +6,26 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Any
 
+CACHE_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test_cache.json")
+
+def load_test_cache() -> Dict[str, Any]:
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+def save_test_cache(cache_data: Dict[str, Any]):
+    try:
+        current = load_test_cache()
+        current.update(cache_data)
+        with open(CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(current, f, indent=2)
+    except Exception:
+        pass
+
 class TestRunner:
     """Runs RSpec tests in parallel for selected Rails engines and parses execution results."""
 
@@ -14,6 +34,25 @@ class TestRunner:
             watcher_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             root_dir = os.path.dirname(watcher_dir)
         self.root_dir = os.path.abspath(root_dir)
+
+    def get_cached_spec_info(self, engine_name: str, scope_key: str, cmd_args: List[str]) -> Dict[str, Any]:
+        """Retrieves cached total examples & last duration if available, else scans spec files."""
+        cache_key = f"{engine_name}:{scope_key}"
+        cache = load_test_cache()
+        if cache_key in cache:
+            entry = cache[cache_key]
+            return {
+                "total_examples": entry.get("total_examples", 100),
+                "last_duration": entry.get("last_duration", 0),
+                "is_cached": True
+            }
+
+        count = self.estimate_spec_count(engine_name, cmd_args)
+        return {
+            "total_examples": count,
+            "last_duration": 0,
+            "is_cached": False
+        }
 
     def estimate_spec_count(self, engine_name: str, cmd_args: List[str]) -> int:
         """Estimates total number of RSpec examples by scanning spec files."""
@@ -54,14 +93,6 @@ class TestRunner:
     def run_engine_tests(self, engine_name: str, scope: str = "all", spec_files: List[str] = None) -> Dict[str, Any]:
         """
         Runs RSpec tests for a specific engine.
-        scope options:
-          - "impacted_only": runs specified spec_files or infers specs from impacted source files
-          - "models": runs spec/models
-          - "services": runs spec/services
-          - "builders": runs spec/builders
-          - "queries": runs spec/queries
-          - "requests": runs spec/requests
-          - "all": runs spec/
         """
         engine_path = os.path.join(self.root_dir, engine_name)
         if not os.path.exists(engine_path):
@@ -154,7 +185,7 @@ class TestRunner:
 
     def run_engine_tests_stream(self, engine_name: str, scope: str = "all", spec_files: List[str] = None, progress_callback = None) -> Dict[str, Any]:
         """
-        Runs RSpec tests for a specific engine, streaming progress updates via progress_callback.
+        Runs RSpec tests for a specific engine, streaming progress updates via progress_callback at native speed.
         """
         engine_path = os.path.join(self.root_dir, engine_name)
         if not os.path.exists(engine_path):
@@ -221,24 +252,26 @@ class TestRunner:
             else:
                 cmd_args = ["spec"]
 
-        total_specs_estimated = self.estimate_spec_count(engine_name, cmd_args)
+        scope_key = scope if scope != "impacted_only" else f"impacted_{len(spec_files or [])}"
+        cached_info = self.get_cached_spec_info(engine_name, scope_key, cmd_args)
+        total_specs_estimated = cached_info["total_examples"]
 
         if progress_callback:
             progress_callback({
                 "type": "start",
                 "engine": engine_name,
                 "total_specs": total_specs_estimated,
+                "last_duration": cached_info.get("last_duration", 0),
                 "scope_used": " ".join(cmd_args)
             })
 
-        command = ["bundle", "exec", "rspec", "--format", "documentation"] + cmd_args
+        command = ["bundle", "exec", "rspec"] + cmd_args
         start_time = time.time()
         raw_output_lines = []
         completed = 0
         passed = 0
         failed = 0
         pending = 0
-        current_spec_name = ""
 
         try:
             env = os.environ.copy()
@@ -257,27 +290,20 @@ class TestRunner:
             for line in proc.stdout:
                 raw_output_lines.append(line)
                 stripped = line.strip()
-                is_completed_example = False
 
-                if "(FAILED" in stripped:
-                    is_completed_example = True
-                    failed += 1
-                    completed += 1
-                elif "(PENDING" in stripped:
-                    is_completed_example = True
-                    pending += 1
-                    completed += 1
-                elif any(keyword in line for keyword in ["  should ", "  it ", "  scenario ", "  is expected to ", "  creates ", "  validates ", "  returns "]):
-                    is_completed_example = True
-                    passed += 1
-                    completed += 1
+                if stripped.startswith(".") or stripped.startswith("F") or stripped.startswith("*"):
+                    for ch in stripped:
+                        if ch == '.':
+                            passed += 1
+                            completed += 1
+                        elif ch == 'F':
+                            failed += 1
+                            completed += 1
+                        elif ch == '*':
+                            pending += 1
+                            completed += 1
 
-                if stripped.startswith("spec/") or stripped.endswith("_spec.rb"):
-                    current_spec_name = stripped
-                elif stripped and len(stripped) > 3:
-                    current_spec_name = stripped[:65]
-
-                if progress_callback and (is_completed_example or len(raw_output_lines) % 4 == 0):
+                if progress_callback and (completed > 0 or len(raw_output_lines) % 2 == 0):
                     effective_total = max(total_specs_estimated, completed)
                     percent = min(99, int((completed / effective_total) * 100)) if effective_total > 0 else 0
                     elapsed = round(time.time() - start_time, 1)
@@ -292,8 +318,7 @@ class TestRunner:
                         "pending": pending,
                         "percent": percent,
                         "elapsed": elapsed,
-                        "current_spec": current_spec_name,
-                        "last_line": stripped[:80]
+                        "current_spec": f"Executando suíte RSpec em [{engine_name}]..."
                     })
 
             proc.wait(timeout=300)
@@ -301,19 +326,30 @@ class TestRunner:
             parsed = self._parse_rspec_output(raw_output, proc.returncode)
             parsed["engine"] = engine_name
             parsed["scope_used"] = " ".join(cmd_args)
-            parsed["elapsed_seconds"] = round(time.time() - start_time, 1)
+            elapsed_dur = round(time.time() - start_time, 1)
+            parsed["elapsed_seconds"] = elapsed_dur
+
+            final_total = parsed.get("total_examples") or completed
+            if final_total > 0:
+                save_test_cache({
+                    f"{engine_name}:{scope_key}": {
+                        "total_examples": final_total,
+                        "last_duration": elapsed_dur,
+                        "last_run": time.strftime("%Y-%m-%d %H:%M:%S")
+                    }
+                })
 
             if progress_callback:
                 progress_callback({
                     "type": "progress",
                     "engine": engine_name,
-                    "completed": parsed.get("total_examples", completed),
-                    "total": parsed.get("total_examples", completed),
-                    "passed": max(0, parsed.get("total_examples", completed) - parsed.get("failures_count", 0)),
+                    "completed": final_total,
+                    "total": final_total,
+                    "passed": max(0, final_total - parsed.get("failures_count", 0)),
                     "failed": parsed.get("failures_count", 0),
                     "pending": parsed.get("pending_count", 0),
                     "percent": 100,
-                    "elapsed": parsed["elapsed_seconds"],
+                    "elapsed": elapsed_dur,
                     "current_spec": "Concluído!",
                     "last_line": "Suíte finalizada com sucesso."
                 })

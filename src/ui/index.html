@@ -935,10 +935,11 @@
     /* Real-Time Radial Progress Ring & Progress Bar */
     .progress-ring-svg {
       position: absolute;
-      inset: -22px;
-      width: 130px;
-      height: 130px;
-      transform: rotate(-90deg);
+      top: 50%;
+      left: 50%;
+      width: 120px;
+      height: 120px;
+      transform: translate(-50%, -50%) rotate(-90deg);
       z-index: 4;
       pointer-events: none;
     }
@@ -1425,9 +1426,9 @@
 
     function getScannerWidgetHTML(message = 'Escaneando monorepo & git diff...', showProgress = false) {
       const ringCircle = showProgress ? `
-        <svg class="progress-ring-svg" width="130" height="130" viewBox="0 0 130 130">
-          <circle cx="65" cy="65" r="56" stroke="rgba(255,255,255,0.08)" stroke-width="6" fill="transparent" />
-          <circle id="scannerProgressCircle" class="progress-ring-circle" cx="65" cy="65" r="56" stroke="url(#progressRingGrad)" stroke-width="6" fill="transparent" stroke-dasharray="351.8" stroke-dashoffset="351.8" stroke-linecap="round" />
+        <svg class="progress-ring-svg" width="120" height="120" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="52" stroke="rgba(255,255,255,0.08)" stroke-width="5" fill="transparent" />
+          <circle id="scannerProgressCircle" class="progress-ring-circle" cx="60" cy="60" r="52" stroke="url(#progressRingGrad)" stroke-width="5" fill="transparent" stroke-dasharray="326.7" stroke-dashoffset="326.7" stroke-linecap="round" />
           <defs>
             <linearGradient id="progressRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stop-color="var(--accent-blue)"/>
@@ -2073,7 +2074,7 @@
       const remaining = Math.max(0, total - completed);
 
       if (circle) {
-        const circum = 351.8;
+        const circum = 326.7;
         const offset = circum * (1 - percent / 100);
         circle.style.strokeDashoffset = offset;
       }
