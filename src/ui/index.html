@@ -423,20 +423,45 @@
     /* Main Container */
     main {
       flex: 1;
-      padding: 2rem;
-      max-width: 1600px;
+      padding: 1.5rem 1rem;
+      max-width: 1920px;
       margin: 0 auto;
-      width: 100%;
+      width: 98%;
       display: flex;
       flex-direction: column;
-      gap: 2rem;
+      gap: 1.5rem;
     }
 
-    /* Stats Grid */
-    .stats-grid {
+    /* Top Overview Grid (2x2 KPIs + Graph side-by-side) */
+    .top-overview-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: 460px 1fr;
       gap: 1.25rem;
+      align-items: stretch;
+    }
+
+    @media (max-width: 1300px) {
+      .top-overview-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .stats-grid-2x2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .graph-section-card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .graph-section-card .graph-container {
+      flex: 1;
+      min-height: 160px;
     }
 
     .stat-card {
@@ -1111,46 +1136,49 @@
 
   <main>
 
-    <!-- KPI Summary Grid -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-title">Engine Selecionada</div>
-        <div class="stat-value" id="kpiEngine">--</div>
-        <div class="stat-desc" id="kpiEngineSub">Selecione uma engine acima</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-title">Entidades Alteradas</div>
-        <div class="stat-value" id="kpiEntities">0</div>
-        <div class="stat-desc">Models, Services, Builders, Queries...</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-title">Arquivos Impactados</div>
-        <div class="stat-value" id="kpiImpactedFiles">0</div>
-        <div class="stat-desc" id="kpiImpactedEngines">Em 0 outros módulos</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-title">Nível de Risco</div>
-        <div class="stat-value" id="kpiRisk">--</div>
-        <div class="stat-desc" id="kpiRiskSub">🔴 0 Alto | 🟡 0 Médio</div>
-      </div>
-    </div>
-
-    <!-- Visual Dependency Network -->
-    <div class="section-card">
-      <div class="section-header">
-        <div class="section-title">
-          <span>🌐 Grafo de Impacto Cruzado entre Módulos</span>
+    <!-- Top Overview Section: 2x2 KPIs + Graph side-by-side -->
+    <div class="top-overview-grid">
+      <!-- KPI Summary Grid 2x2 -->
+      <div class="stats-grid-2x2">
+        <div class="stat-card">
+          <div class="stat-title">Engine Selecionada</div>
+          <div class="stat-value" id="kpiEngine">--</div>
+          <div class="stat-desc" id="kpiEngineSub">Selecione uma engine acima</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Entidades Alteradas</div>
+          <div class="stat-value" id="kpiEntities">0</div>
+          <div class="stat-desc">Models, Services...</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Arquivos Impactados</div>
+          <div class="stat-value" id="kpiImpactedFiles">0</div>
+          <div class="stat-desc" id="kpiImpactedEngines">Em 0 outros módulos</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Nível de Risco</div>
+          <div class="stat-value" id="kpiRisk">--</div>
+          <div class="stat-desc" id="kpiRiskSub">🔴 0 Alto | 🟡 0 Médio</div>
         </div>
       </div>
-      <div class="graph-container">
-        <div class="graph-wrapper">
-          <div class="node-source" id="sourceNode">
-            <div style="font-size: 0.75rem; color: var(--text-muted);">SOURCE ENGINE</div>
-            <div class="node-source-title" id="sourceNodeName">Stock</div>
+
+      <!-- Visual Dependency Network -->
+      <div class="section-card graph-section-card">
+        <div class="section-header">
+          <div class="section-title">
+            <span>🌐 Grafo de Impacto Cruzado entre Módulos</span>
           </div>
-          <div style="color: var(--accent-purple); font-weight: 700; font-size: 1.5rem;">➔</div>
-          <div class="node-targets" id="targetNodesContainer">
-            <div style="color: var(--text-muted); font-size: 0.9rem;">Nenhuma análise executada ainda. Clique em "Verifique Impactos".</div>
+        </div>
+        <div class="graph-container">
+          <div class="graph-wrapper">
+            <div class="node-source" id="sourceNode">
+              <div style="font-size: 0.75rem; color: var(--text-muted);">SOURCE ENGINE</div>
+              <div class="node-source-title" id="sourceNodeName">Stock</div>
+            </div>
+            <div style="color: var(--accent-purple); font-weight: 700; font-size: 1.5rem;">➔</div>
+            <div class="node-targets" id="targetNodesContainer">
+              <div style="color: var(--text-muted); font-size: 0.9rem;">Nenhuma análise executada ainda. Clique em "Verifique Impactos".</div>
+            </div>
           </div>
         </div>
       </div>
