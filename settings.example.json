@@ -2,5 +2,6 @@
   "theme": "dark",
   "notifications_enabled": true,
   "toasts_enabled": true,
-  "sound_enabled": true
+  "sound_enabled": true,
+  "project_dir": "auriga_project"
 }

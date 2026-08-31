@@ -1385,6 +1385,20 @@
 
         <hr style="border: none; border-top: 1px solid var(--panel-border); margin: 0.2rem 0;" />
 
+        <!-- Project Directory Setting -->
+        <div class="control-group">
+          <span class="control-label" style="font-size: 0.9rem; font-weight: 600; color: var(--text-bright); display: block; margin-bottom: 0.4rem;">📂 Diretório / Path do Projeto Target</span>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="text" id="settingProjectDir" placeholder="Ex: /home/usuario/workspace/auriga_project ou auriga_project" style="flex: 1; padding: 0.55rem 0.8rem; background: var(--input-bg); color: var(--text-bright); border: 1px solid var(--panel-border); font-family: var(--font-mono); font-size: 0.82rem; border-radius: 6px;">
+            <button class="btn-primary" onclick="updateProjectDirSettings()" style="padding: 0.55rem 1rem; font-size: 0.85rem; white-space: nowrap;">💾 Salvar</button>
+          </div>
+          <div id="activeRootDirBadge" style="font-size: 0.73rem; color: var(--accent-blue); margin-top: 0.4rem; font-family: var(--font-mono);">
+            📍 Caminho ativo: <span id="activeRootDirText">...</span>
+          </div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--panel-border); margin: 0.2rem 0;" />
+
         <div>
           <span class="control-label" style="font-size: 0.9rem; font-weight: 600; color: var(--text-bright); display: block; margin-bottom: 0.75rem;">🔔 Notificações e Avisos</span>
           
@@ -1413,10 +1427,10 @@
           <div style="display: flex; flex-direction: column; gap: 0.2rem;">
             <div style="display: flex; align-items: center; gap: 0.5rem;">
               <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-bright);">Watcher Engine</span>
-              <span style="font-size: 0.75rem; font-weight: 600; background: rgba(2, 132, 199, 0.15); color: var(--accent-blue); padding: 0.15rem 0.5rem; border-radius: 12px; border: 1px solid rgba(2, 132, 199, 0.3);">v1.2.0</span>
+              <span id="watcherVersionSpan" style="font-size: 0.75rem; font-weight: 600; background: rgba(2, 132, 199, 0.15); color: var(--accent-blue); padding: 0.15rem 0.5rem; border-radius: 12px; border: 1px solid rgba(2, 132, 199, 0.3);">v1.3.0</span>
             </div>
             <div style="font-size: 0.75rem; color: var(--text-muted);">
-              📅 Última Atualização: <b>28/08/2026</b>
+              📅 Última Atualização: <b id="watcherLastUpdateSpan">31/08/2026</b>
             </div>
           </div>
 
@@ -2473,13 +2487,42 @@
           const osElem = document.getElementById('settingNotifyOS');
           const toastElem = document.getElementById('settingNotifyToast');
           const soundElem = document.getElementById('settingNotifySound');
+          const projDirElem = document.getElementById('settingProjectDir');
+          const activeRootDirText = document.getElementById('activeRootDirText');
+          const versionSpan = document.getElementById('watcherVersionSpan');
+          const lastUpdateSpan = document.getElementById('watcherLastUpdateSpan');
 
           if (osElem) osElem.checked = userNotificationSettings.notifications_enabled;
           if (toastElem) toastElem.checked = userNotificationSettings.toasts_enabled;
           if (soundElem) soundElem.checked = userNotificationSettings.sound_enabled;
+          if (projDirElem) projDirElem.value = s.project_dir || '';
+          if (activeRootDirText) activeRootDirText.textContent = data.active_root_dir || 'Desconhecido';
+          if (versionSpan && data.version) versionSpan.textContent = `v${data.version}`;
+          if (lastUpdateSpan && data.last_update) lastUpdateSpan.textContent = data.last_update;
         }
       } catch (err) {
         console.error('Failed to load settings from server:', err);
+      }
+    }
+
+    async function updateProjectDirSettings() {
+      const projDirVal = document.getElementById('settingProjectDir').value.trim();
+      try {
+        const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ project_dir: projDirVal })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          const activeRootDirText = document.getElementById('activeRootDirText');
+          if (activeRootDirText) activeRootDirText.textContent = data.active_root_dir || projDirVal;
+          showToast('📂 Diretório Atualizado!', `Caminho do projeto atualizado para: ${data.active_root_dir || projDirVal}`, 'success');
+          if (typeof loadEngines === 'function') loadEngines();
+        }
+      } catch (err) {
+        console.error('Failed to save project_dir settings:', err);
+        showToast('❌ Erro ao Salvar', 'Não foi possível salvar o caminho do projeto.', 'danger');
       }
     }
 

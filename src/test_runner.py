@@ -29,14 +29,13 @@ def save_test_cache(cache_data: Dict[str, Any]):
 import signal
 import threading
 
+from src.config import get_default_root_dir
+
 class TestRunner:
     """Runs RSpec tests in parallel for selected Rails engines and parses execution results."""
 
     def __init__(self, root_dir: str = None):
-        if root_dir is None:
-            watcher_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            root_dir = os.path.dirname(watcher_dir)
-        self.root_dir = os.path.abspath(root_dir)
+        self.root_dir = get_default_root_dir(root_dir)
         self.active_processes = {}
         self.active_processes_lock = threading.Lock()
         self.is_cancelled = False

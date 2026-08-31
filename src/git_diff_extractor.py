@@ -3,14 +3,13 @@ import subprocess
 import re
 from typing import List, Dict, Any, Optional
 
+from src.config import get_default_root_dir
+
 class GitDiffExtractor:
     """Extracts and parses unified Git diffs for a given module/engine."""
 
     def __init__(self, root_dir: str = None):
-        if root_dir is None:
-            watcher_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            root_dir = os.path.dirname(watcher_dir)
-        self.root_dir = os.path.abspath(root_dir)
+        self.root_dir = get_default_root_dir(root_dir)
 
     def get_engine_diff(self, engine_name: str, target: str = "working", base_branch: str = "master") -> Dict[str, Any]:
         """

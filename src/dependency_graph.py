@@ -3,14 +3,13 @@ import glob
 import re
 from typing import List, Dict, Set, Any
 
+from src.config import get_default_root_dir
+
 class DependencyGraph:
     """Parses Gemfiles, gemspecs, and package.json files to build a system dependency graph."""
 
     def __init__(self, root_dir: str = None):
-        if root_dir is None:
-            watcher_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            root_dir = os.path.dirname(watcher_dir)
-        self.root_dir = os.path.abspath(root_dir)
+        self.root_dir = get_default_root_dir(root_dir)
         self.modules = []
         self.deps_map = {}       # module -> set of modules it depends on (direct dependencies)
         self.consumers_map = {}  # module -> set of modules that depend on it (reverse dependencies)

@@ -4,6 +4,7 @@ import urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing import Dict, Any
 
+from src.config import VERSION, LAST_UPDATE
 from src.engine_scanner import EngineScanner
 from src.git_diff_extractor import GitDiffExtractor
 from src.entity_parser import EntityParser
@@ -18,7 +19,8 @@ def load_settings() -> Dict[str, Any]:
         "theme": "dark",
         "notifications_enabled": True,
         "toasts_enabled": True,
-        "sound_enabled": True
+        "sound_enabled": True,
+        "project_dir": "auriga_project"
     }
     if os.path.exists(SETTINGS_FILE):
         try:
@@ -43,6 +45,15 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
     evaluator = RiskEvaluator()
     test_runner = TestRunner()
 
+    @classmethod
+    def refresh_config(cls):
+        """Re-initializes all system components using the latest target project path."""
+        cls.scanner = EngineScanner()
+        cls.diff_extractor = GitDiffExtractor()
+        cls.tracer = ImpactTracer()
+        cls.evaluator = RiskEvaluator()
+        cls.test_runner = TestRunner()
+
     def do_GET(self):
         parsed_url = urllib.parse.urlparse(self.path)
         path = parsed_url.path
@@ -57,7 +68,13 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
             target = query_params.get("target", ["working"])[0]
             self._handle_get_diff(engine, target)
         elif path == "/api/settings":
-            self._send_json({"status": "success", "settings": load_settings()})
+            self._send_json({
+                "status": "success",
+                "settings": load_settings(),
+                "active_root_dir": self.scanner.root_dir,
+                "version": VERSION,
+                "last_update": LAST_UPDATE
+            })
         elif path in ["/assets/logo.png", "/logo.png", "/favicon.ico"]:
             logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "logo.png")
             if os.path.exists(logo_path):
@@ -131,7 +148,14 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
             except Exception:
                 body = {}
             save_settings(body)
-            self._send_json({"status": "success", "settings": load_settings()})
+            WatcherHTTPHandler.refresh_config()
+            self._send_json({
+                "status": "success",
+                "settings": load_settings(),
+                "active_root_dir": self.scanner.root_dir,
+                "version": VERSION,
+                "last_update": LAST_UPDATE
+            })
         else:
             self._send_json({"error": "Endpoint not found"}, status=404)
 
