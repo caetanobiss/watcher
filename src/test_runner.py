@@ -26,6 +26,8 @@ def save_test_cache(cache_data: Dict[str, Any]):
     except Exception:
         pass
 
+import threading
+
 class TestRunner:
     """Runs RSpec tests in parallel for selected Rails engines and parses execution results."""
 
@@ -34,6 +36,21 @@ class TestRunner:
             watcher_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             root_dir = os.path.dirname(watcher_dir)
         self.root_dir = os.path.abspath(root_dir)
+        self.active_processes = {}
+        self.active_processes_lock = threading.Lock()
+
+    def cancel_all_tests(self):
+        """Kills all running RSpec test subprocesses immediately."""
+        with self.active_processes_lock:
+            for eng, proc in list(self.active_processes.items()):
+                try:
+                    proc.terminate()
+                    time.sleep(0.1)
+                    if proc.poll() is None:
+                        proc.kill()
+                except Exception:
+                    pass
+            self.active_processes.clear()
 
     def get_cached_spec_info(self, engine_name: str, scope_key: str, cmd_args: List[str]) -> Dict[str, Any]:
         """Retrieves cached total examples & last duration if available, else scans spec files."""
@@ -265,7 +282,7 @@ class TestRunner:
                 "scope_used": " ".join(cmd_args)
             })
 
-        command = ["bundle", "exec", "rspec"] + cmd_args
+        command = ["bundle", "exec", "rspec", "--tty"] + cmd_args
         start_time = time.time()
         raw_output_lines = []
         completed = 0
@@ -276,6 +293,7 @@ class TestRunner:
         try:
             env = os.environ.copy()
             env["PYTHONUNBUFFERED"] = "1"
+            env["RUBYOPT"] = "-e '$stdout.sync = true; $stderr.sync = true'"
             
             proc = subprocess.Popen(
                 command,
@@ -286,6 +304,9 @@ class TestRunner:
                 bufsize=1,
                 env=env
             )
+
+            with self.active_processes_lock:
+                self.active_processes[engine_name] = proc
 
             for line in proc.stdout:
                 raw_output_lines.append(line)
@@ -384,6 +405,9 @@ class TestRunner:
             if progress_callback:
                 progress_callback({"type": "engine_complete", "engine": engine_name, "result": res})
             return res
+        finally:
+            with self.active_processes_lock:
+                self.active_processes.pop(engine_name, None)
 
     def run_parallel_tests(self, engine_requests: List[Dict[str, Any]], max_workers: int = 4) -> Dict[str, Any]:
         """Runs RSpec tests in parallel across multiple engines using ThreadPoolExecutor."""

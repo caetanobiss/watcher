@@ -120,6 +120,9 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
                 self._handle_run_tests_stream(body)
             else:
                 self._handle_run_tests(body)
+        elif path == "/api/cancel-tests":
+            self.test_runner.cancel_all_tests()
+            self._send_json({"status": "success", "message": "Execução de testes cancelada com sucesso."})
         elif path == "/api/settings":
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)

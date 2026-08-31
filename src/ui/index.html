@@ -1009,6 +1009,29 @@
       border: 1px solid var(--panel-border);
       text-align: left;
     }
+
+    .btn-cancel-test {
+      background: rgba(248, 81, 73, 0.12);
+      color: var(--accent-red);
+      border: 1px solid rgba(248, 81, 73, 0.35);
+      padding: 0.45rem 1.25rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.4rem;
+    }
+
+    .btn-cancel-test:hover {
+      background: rgba(248, 81, 73, 0.25);
+      border-color: var(--accent-red);
+      transform: translateY(-1px);
+      box-shadow: 0 0 12px rgba(248, 81, 73, 0.3);
+    }
   </style>
 </head>
 <body>
@@ -1456,6 +1479,10 @@
             <div id="scannerRemainingBadge" style="color: var(--text-muted);">⏳ Calculando...</div>
           </div>
           <div class="scanner-live-log" id="scannerLiveLogText">Iniciando execução dos testes RSpec...</div>
+          <button id="cancelTestsBtn" onclick="cancelTestExecution()" class="btn-cancel-test">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            Cancelar Execução
+          </button>
         </div>
       ` : '';
 
@@ -1975,6 +2002,31 @@
       executeTests(reqs);
     }
 
+    let currentTestTimerInterval = null;
+    let activeTestAbortController = null;
+
+    async function cancelTestExecution() {
+      if (currentTestTimerInterval) {
+        clearInterval(currentTestTimerInterval);
+        currentTestTimerInterval = null;
+      }
+      if (activeTestAbortController) {
+        activeTestAbortController.abort();
+        activeTestAbortController = null;
+      }
+      try {
+        await fetch('/api/cancel-tests', { method: 'POST' });
+      } catch (e) {
+        console.error('Error cancelling tests:', e);
+      }
+      setScannerLoading(false);
+      const tabsHeader = document.getElementById('testTabsHeader');
+      const tabContent = document.getElementById('testTabContent');
+      if (tabsHeader) tabsHeader.innerHTML = '<div style="color: var(--accent-orange); padding: 0.5rem; font-weight: 600;">🚫 Execução cancelada pelo usuário.</div>';
+      if (tabContent) tabContent.innerHTML = '<div style="color: var(--text-muted); padding: 1.5rem; text-align: center;">A execução da suíte de testes RSpec foi interrompida.</div>';
+      showToast('🚫 Testes Cancelados', 'A execução dos testes RSpec foi cancelada.', 'info');
+    }
+
     async function executeTests(engineRequests) {
       const container = document.getElementById('testResultsContainer');
       const tabsHeader = document.getElementById('testTabsHeader');
@@ -1990,8 +2042,9 @@
         Notification.requestPermission();
       }
 
+      if (currentTestTimerInterval) clearInterval(currentTestTimerInterval);
       const startTime = Date.now();
-      const timerInterval = setInterval(() => {
+      currentTestTimerInterval = setInterval(() => {
         const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
         const mins = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
         const secs = String(elapsedSeconds % 60).padStart(2, '0');
@@ -1999,11 +2052,14 @@
         if (timerElem) timerElem.textContent = `⏱️ ${mins}:${secs}`;
       }, 1000);
 
+      activeTestAbortController = new AbortController();
+
       try {
         const response = await fetch('/api/run-tests-stream', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ engines: engineRequests })
+          body: JSON.stringify({ engines: engineRequests }),
+          signal: activeTestAbortController.signal
         });
 
         if (!response.ok) {
@@ -2022,6 +2078,8 @@
           const chunks = buffer.split('\n\n');
           buffer = chunks.pop();
 
+          let isStreamComplete = false;
+
           for (const chunk of chunks) {
             const line = chunk.trim();
             if (line.startsWith('data: ')) {
@@ -2034,26 +2092,38 @@
                   finalResults[data.engine] = data.result;
                 } else if (data.type === 'complete') {
                   if (data.results) finalResults = data.results;
+                  isStreamComplete = true;
                 }
               } catch (e) {
                 console.error('Error parsing SSE chunk:', e);
               }
             }
           }
+
+          if (isStreamComplete) break;
         }
 
-        clearInterval(timerInterval);
+        if (currentTestTimerInterval) {
+          clearInterval(currentTestTimerInterval);
+          currentTestTimerInterval = null;
+        }
         currentTestResults = finalResults;
         renderTestResultsTabs(currentTestResults);
         notifyTestCompletion(currentTestResults);
 
       } catch (err) {
-        clearInterval(timerInterval);
+        if (currentTestTimerInterval) {
+          clearInterval(currentTestTimerInterval);
+          currentTestTimerInterval = null;
+        }
+        if (err.name === 'AbortError') return;
+
         tabsHeader.innerHTML = '<div style="color: var(--accent-red);">Falha na requisição de testes.</div>';
         tabContent.innerHTML = `<div style="color: var(--accent-red); padding: 1.5rem;">${escapeHtml(err.message)}</div>`;
         showToast('🔴 Erro de Conexão', err.message, 'error');
       } finally {
         setScannerLoading(false);
+        activeTestAbortController = null;
       }
     }
 
