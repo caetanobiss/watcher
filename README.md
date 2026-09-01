@@ -67,8 +67,20 @@ O **Watcher**:
 ## 💻 Requisitos do Sistema
 
 - **Python**: 3.10 ou superior (*Zero dependências pip externas necessárias! Usa apenas a biblioteca padrão do Python*).
-- **Ripgrep (`rg`)**: Instalado no sistema (usado para buscas regex paralelas de alta performance).
+- **Ripgrep (`rg`)**: Recomendado para buscas regex de ultra-alta performance (*possuindo fallback nativo em Python*).
 - **Git**: Repositórios git inicializados nos módulos.
+
+---
+
+## 🛠️ Instalação Automática
+
+O Watcher inclui um assistente interativo em Bash para verificar e instalar todas as dependências do sistema e criar o atalho global `watcher`:
+
+```bash
+./install.sh
+```
+
+*(Você também pode passar `-y` para confirmar automaticamente todas as etapas: `./install.sh -y`)*
 
 ---
 
