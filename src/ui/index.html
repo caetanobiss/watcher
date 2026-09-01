@@ -546,6 +546,10 @@
       const risk = report.risk_summary || {};
       const engineImpacts = report.engine_impacts || {};
 
+      if (report.rg_installed === false) {
+        showToast('ℹ️ Busca Nativa Python', 'ripgrep (rg) não foi encontrado no sistema. A busca foi realizada com sucesso pelo scanner Python. Dica: instale ripgrep (ex: sudo apt install ripgrep) para máxima velocidade!', 'info');
+      }
+
       // 1. KPIs
       document.getElementById('kpiEngine').textContent = data.engine;
       document.getElementById('kpiEngineSub').textContent = `Diff: ${data.target}`;

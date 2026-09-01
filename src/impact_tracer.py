@@ -2,6 +2,7 @@ import os
 import subprocess
 import json
 import re
+import shutil
 from typing import List, Dict, Any, Set
 
 from src.config import get_default_root_dir
@@ -15,8 +16,9 @@ GENERIC_STOP_WORDS = {
 }
 
 class ImpactTracer:
-    """Executes high-speed Ripgrep searches across monorepo engines to trace cross-module impacts,
-    respecting Gemfile/gemspec dependencies to eliminate false positives."""
+    """Executes high-speed searches across monorepo engines to trace cross-module impacts,
+    respecting Gemfile/gemspec dependencies to eliminate false positives.
+    Uses Ripgrep ('rg') if installed, with seamless pure-Python fallback."""
 
     def __init__(self, root_dir: str = None):
         self.root_dir = get_default_root_dir(root_dir)
@@ -24,12 +26,14 @@ class ImpactTracer:
 
     def trace_impacts(self, source_engine: str, entities: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Traces references to all entities across modules that depend on source_engine."""
+        rg_installed = shutil.which('rg') is not None
         if not entities:
             return {
                 "source_engine": source_engine,
                 "total_impacted_files": 0,
                 "impacted_engines_count": 0,
-                "engine_impacts": {}
+                "engine_impacts": {},
+                "rg_installed": rg_installed
             }
 
         source_ns = self._to_camel_case(source_engine)
@@ -85,11 +89,12 @@ class ImpactTracer:
                 "source_engine": source_engine,
                 "total_impacted_files": 0,
                 "impacted_engines_count": 0,
-                "engine_impacts": {}
+                "engine_impacts": {},
+                "rg_installed": rg_installed
             }
 
-        # Run ripgrep scan
-        raw_matches = self._run_ripgrep_scan(search_terms, source_engine)
+        # Run scan (ripgrep or fallback python scanner)
+        raw_matches, actual_rg_used = self._execute_scan(search_terms, source_engine)
 
         # Process and filter matches based on Gemfile dependency graph
         engine_impacts = {}
@@ -166,8 +171,20 @@ class ImpactTracer:
             "allowed_consumers": list(allowed_consumers),
             "total_impacted_files": len(total_impacted_files_set),
             "impacted_engines_count": len(engine_impacts),
-            "engine_impacts": engine_impacts
+            "engine_impacts": engine_impacts,
+            "rg_installed": actual_rg_used
         }
+
+    def _execute_scan(self, search_terms: set, source_engine: str) -> tuple[List[Dict[str, Any]], bool]:
+        """Executes search via ripgrep if available, seamlessly falling back to Python scanner."""
+        if shutil.which('rg'):
+            try:
+                matches = self._run_ripgrep_scan(search_terms, source_engine)
+                return matches, True
+            except (FileNotFoundError, OSError):
+                pass
+
+        return self._run_python_scan(search_terms, source_engine), False
 
     def _run_ripgrep_scan(self, search_terms: set, source_engine: str) -> List[Dict[str, Any]]:
         """Constructs and executes ripgrep command for fast pattern matching."""
@@ -228,6 +245,70 @@ class ImpactTracer:
                     })
             except Exception:
                 continue
+
+        return matches
+
+    def _run_python_scan(self, search_terms: set, source_engine: str) -> List[Dict[str, Any]]:
+        """Fallback pure-Python scanner when ripgrep ('rg') executable is missing in PATH."""
+        matches = []
+        escaped_terms = [re.escape(term) for term in search_terms]
+        pattern = re.compile("(" + "|".join(escaped_terms) + ")")
+
+        ignored_dirs = {
+            source_engine, 'watcher', 'node_modules', 'log', 'tmp',
+            'coverage', '.git', '.bundle', 'dist', 'build', '.idea', '.vscode', '__pycache__'
+        }
+
+        ignored_exts = {
+            '.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf', '.zip', '.gz',
+            '.tar', '.mp4', '.sqlite3', '.db', '.pyc', '.so', '.dylib', '.dll',
+            '.woff', '.woff2', '.ttf', '.eot', '.svg', '.map'
+        }
+
+        for root, dirs, files in os.walk(self.root_dir):
+            dirs[:] = [d for d in dirs if d not in ignored_dirs and not d.startswith('.')]
+
+            rel_root = os.path.relpath(root, self.root_dir)
+            parts = rel_root.split(os.sep) if rel_root != '.' else []
+
+            if parts and (parts[0] in ignored_dirs or parts[0].startswith('.')):
+                continue
+
+            for file_name in files:
+                ext = os.path.splitext(file_name)[1].lower()
+                if ext in ignored_exts or file_name.startswith('.'):
+                    continue
+
+                abs_path = os.path.join(root, file_name)
+                rel_path = os.path.relpath(abs_path, self.root_dir)
+                f_parts = rel_path.split(os.sep)
+
+                f_target_engine = f_parts[0] if len(f_parts) > 1 else "root"
+                if f_target_engine == source_engine or f_target_engine == "watcher":
+                    continue
+
+                file_rel_engine = os.sep.join(f_parts[1:]) if len(f_parts) > 1 else rel_path
+
+                try:
+                    with open(abs_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        for line_num, line_text in enumerate(f, 1):
+                            if pattern.search(line_text):
+                                matched_term = ""
+                                for term in search_terms:
+                                    if term in line_text:
+                                        matched_term = term
+                                        break
+
+                                matches.append({
+                                    "target_engine": f_target_engine,
+                                    "file_path": file_rel_engine,
+                                    "abs_path": abs_path,
+                                    "line_num": line_num,
+                                    "line_text": line_text,
+                                    "matched_term": matched_term or list(search_terms)[0]
+                                })
+                except Exception:
+                    continue
 
         return matches
 
