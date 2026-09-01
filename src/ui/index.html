@@ -1491,7 +1491,16 @@
               </div>
             `;
           } else {
-            statusDiv.innerHTML = `<div style="color: var(--accent-green); font-size: 0.8rem; margin-top: 0.4rem; font-weight: 600;">✅ Seu Watcher já está na versão mais recente (v${escapeHtml(data.current_version)})!</div>`;
+            statusDiv.innerHTML = `
+              <div style="margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                <div style="color: var(--accent-green); font-size: 0.8rem; font-weight: 600;">
+                  ✅ Seu Watcher já está na versão mais recente (v${escapeHtml(data.current_version)})!
+                </div>
+                <button class="btn-secondary" style="font-size: 0.75rem; padding: 0.35rem 0.65rem; border-color: rgba(88, 166, 255, 0.3); color: var(--text-bright);" onclick="performUpdateUI()" id="performUpdateBtn">
+                  📥 Forçar Re-sincronização do Código (Baixar master do GitHub)
+                </button>
+              </div>
+            `;
           }
         } else {
           statusDiv.innerHTML = `<div style="color: var(--accent-red); font-size: 0.8rem; margin-top: 0.4rem;">❌ ${escapeHtml(data.message || 'Erro ao verificar atualizações')}</div>`;
