@@ -108,13 +108,15 @@ A ferramenta oferece duas formas de uso: **Interface Web (Dashboard)** e **Inter
 
 ### 🌐 1. Interface Web Dashboard
 
-Inicie o servidor web na pasta do `watcher`:
+Inicie o servidor web com 1 clique (abre o navegador automaticamente):
 
 ```bash
-python3 watcher.py server --port 3019
+./watcher.sh
 ```
 
-Abra o navegador no endereço: **`http://localhost:3019`**
+*(Ou via CLI: `watcher server` / `python3 watcher.py server --port 3019`)*
+
+O servidor iniciará no endereço: **`http://localhost:3019`**
 
 #### Recursos do Dashboard:
 - **Seletor de Engine**: Lista todas as 46 engines com indicador visual de status Git (alterações não commitadas).
