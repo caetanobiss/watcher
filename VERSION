@@ -1,3 +1,9 @@
+[1.4.0] - 01/09/2026
+- Scanner nativo em Python (`_run_python_scan`) como fallback automático de busca quando o Ripgrep (`rg`) não estiver instalado.
+- Script de instalação interativo `install.sh` com verificação de dependências (`python3`, `git`, `ripgrep`, atalho global `watcher`).
+- Script launcher `watcher.sh` para iniciar o servidor Dashboard com 1 clique e abrir o navegador automaticamente.
+- Sistema de Auto-Atualização embutido (`src/updater.py`), comando CLI `watcher update`, script `update.sh` e botões de checagem/re-sincronização na UI (sem requerer Git ou login no GitHub).
+
 [1.3.5] - 31/08/2026
 - Componentização do CSS da UI em arquivos modulares na pasta `src/ui/css/` (`base.css`, `layout.css`, `components.css`, `main.css`).
 - Organização de temas em arquivos individuais na pasta `src/ui/css/themes/` (`dark.css`, `neon.css`, `phosphor.css`, `light.css`).
