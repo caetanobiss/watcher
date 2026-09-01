@@ -359,24 +359,34 @@
         <hr style="border: none; border-top: 1px solid var(--panel-border); margin: 0.2rem 0;" />
 
         <!-- Version & Info Section -->
-        <div style="background: var(--subpanel-bg); border: 1px solid var(--panel-border); border-radius: 8px; padding: 0.85rem 1rem; display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; flex-direction: column; gap: 0.2rem;">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-bright);">Watcher Engine</span>
-              <span id="watcherVersionSpan" style="font-size: 0.75rem; font-weight: 600; background: rgba(2, 132, 199, 0.15); color: var(--accent-blue); padding: 0.15rem 0.5rem; border-radius: 12px; border: 1px solid rgba(2, 132, 199, 0.3);">v1.3.1</span>
+        <div style="background: var(--subpanel-bg); border: 1px solid var(--panel-border); border-radius: 8px; padding: 0.85rem 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-bright);">Watcher Engine</span>
+                <span id="watcherVersionSpan" style="font-size: 0.75rem; font-weight: 600; background: rgba(2, 132, 199, 0.15); color: var(--accent-blue); padding: 0.15rem 0.5rem; border-radius: 12px; border: 1px solid rgba(2, 132, 199, 0.3);">v1.3.5</span>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">
+                📅 Última Atualização: <b id="watcherLastUpdateSpan">31/08/2026</b>
+              </div>
             </div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">
-              📅 Última Atualização: <b id="watcherLastUpdateSpan">31/08/2026</b>
+
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <button id="checkUpdateBtn" class="btn-secondary" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; border-color: rgba(88, 166, 255, 0.4); color: var(--accent-blue);" onclick="checkForUpdatesUI()">
+                🔄 Checar Atualização
+              </button>
+
+              <a href="https://github.com/caetanobiss/watcher" target="_blank" rel="noopener noreferrer" 
+                 title="Ver Documentação e README no GitHub"
+                 style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: var(--btn-sec-bg); border: 1px solid var(--btn-sec-border); color: var(--text-bright); text-decoration: none; font-size: 1.05rem; font-weight: 700; transition: all 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.1);"
+                 onmouseover="this.style.borderColor='var(--accent-blue)'; this.style.color='var(--accent-blue)';"
+                 onmouseout="this.style.borderColor='var(--btn-sec-border)'; this.style.color='var(--text-bright)';">
+                ❓
+              </a>
             </div>
           </div>
 
-          <a href="https://github.com/caetanobiss/watcher" target="_blank" rel="noopener noreferrer" 
-             title="Ver Documentação e README no GitHub"
-             style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: var(--btn-sec-bg); border: 1px solid var(--btn-sec-border); color: var(--text-bright); text-decoration: none; font-size: 1.05rem; font-weight: 700; transition: all 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.1);"
-             onmouseover="this.style.borderColor='var(--accent-blue)'; this.style.color='var(--accent-blue)';"
-             onmouseout="this.style.borderColor='var(--btn-sec-border)'; this.style.color='var(--text-bright)';">
-            ❓
-          </a>
+          <div id="updateStatusContainer" style="display: none;"></div>
         </div>
 
         <div style="text-align: right; margin-top: 0.5rem;">
@@ -1453,6 +1463,66 @@
         }
       } catch (err) {
         console.error('Failed to load settings from server:', err);
+      }
+    }
+
+    async function checkForUpdatesUI() {
+      const statusDiv = document.getElementById('updateStatusContainer');
+      const btn = document.getElementById('checkUpdateBtn');
+      if (!statusDiv) return;
+
+      btn.disabled = true;
+      btn.innerHTML = `⏳ Checando...`;
+      statusDiv.style.display = 'block';
+      statusDiv.innerHTML = `<span style="color: var(--text-muted); font-size: 0.8rem;">🔄 Checando repositório remoto no GitHub...</span>`;
+
+      try {
+        const res = await fetch('/api/update/check');
+        const data = await res.json();
+        if (data.status === 'success') {
+          if (data.has_update) {
+            statusDiv.innerHTML = `
+              <div style="background: rgba(35, 134, 54, 0.15); border: 1px solid rgba(35, 134, 54, 0.4); padding: 0.75rem; border-radius: 6px; margin-top: 0.5rem;">
+                <div style="font-weight: 700; color: var(--accent-green); font-size: 0.85rem;">🎉 Nova versão disponível: v${escapeHtml(data.latest_version)}</div>
+                <div style="font-size: 0.75rem; color: var(--text-bright); margin: 0.3rem 0;">Sua versão atual: v${escapeHtml(data.current_version)} | Lançada em: ${escapeHtml(data.latest_date)}</div>
+                <button class="btn-primary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; width: 100%; margin-top: 0.4rem; background: linear-gradient(135deg, #238636, #1f6beb); cursor: pointer;" onclick="performUpdateUI()" id="performUpdateBtn">
+                  🚀 Atualizar Watcher Agora (Sem Git)
+                </button>
+              </div>
+            `;
+          } else {
+            statusDiv.innerHTML = `<div style="color: var(--accent-green); font-size: 0.8rem; margin-top: 0.4rem; font-weight: 600;">✅ Seu Watcher já está na versão mais recente (v${escapeHtml(data.current_version)})!</div>`;
+          }
+        } else {
+          statusDiv.innerHTML = `<div style="color: var(--accent-red); font-size: 0.8rem; margin-top: 0.4rem;">❌ ${escapeHtml(data.message || 'Erro ao verificar atualizações')}</div>`;
+        }
+      } catch (err) {
+        statusDiv.innerHTML = `<div style="color: var(--accent-red); font-size: 0.8rem; margin-top: 0.4rem;">❌ Erro de conexão: ${escapeHtml(err.message)}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `🔄 Checar Atualização`;
+      }
+    }
+
+    async function performUpdateUI() {
+      const btn = document.getElementById('performUpdateBtn');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `⏳ Baixando & Atualizando...`;
+      }
+      try {
+        const res = await fetch('/api/update/perform', { method: 'POST' });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showToast('🎉 Atualizado com Sucesso!', data.message, 'success');
+          alert(data.message + '\n\nA página será recarregada para aplicar a nova versão.');
+          window.location.reload();
+        } else {
+          showToast('❌ Erro na Atualização', data.message, 'error');
+          alert('Erro ao atualizar: ' + data.message);
+        }
+      } catch (err) {
+        alert('Erro ao realizar atualização: ' + err.message);
       }
     }
 

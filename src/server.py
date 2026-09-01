@@ -76,6 +76,11 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
                 "version": VERSION,
                 "last_update": LAST_UPDATE
             })
+        elif path == "/api/update/check":
+            from src.updater import WatcherUpdater
+            updater = WatcherUpdater()
+            res = updater.check_for_updates()
+            self._send_json(res)
         elif path in ["/assets/logo.png", "/logo.png", "/favicon.ico"]:
             logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "logo.png")
             if os.path.exists(logo_path):
@@ -172,6 +177,13 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
                 "version": VERSION,
                 "last_update": LAST_UPDATE
             })
+        elif path == "/api/update/perform":
+            from src.updater import WatcherUpdater
+            updater = WatcherUpdater()
+            res = updater.perform_update()
+            if res.get("status") == "success":
+                WatcherHTTPHandler.refresh_config()
+            self._send_json(res)
         else:
             self._send_json({"error": "Endpoint not found"}, status=404)
 

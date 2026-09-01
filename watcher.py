@@ -31,10 +31,41 @@ def main():
     # Command: engines
     engines_parser = subparsers.add_parser("engines", help="List all system modules and git status")
 
+    # Command: update
+    update_parser = subparsers.add_parser("update", help="Check and install Watcher updates automatically from GitHub master branch")
+    update_parser.add_argument("--check", action="store_true", help="Only check for available updates without installing")
+
     args = parser.parse_args()
 
     if args.command == "server":
         run_server(args.port)
+
+    elif args.command == "update":
+        from src.updater import WatcherUpdater
+        updater = WatcherUpdater()
+        print("\n🔍 Verificando atualizações do Watcher no repositório remoto...")
+        check_res = updater.check_for_updates()
+        if check_res.get("status") == "error":
+            print(f"❌ {check_res.get('message')}\n")
+            sys.exit(1)
+
+        curr_v = check_res.get("current_version")
+        latest_v = check_res.get("latest_version")
+        has_upd = check_res.get("has_update")
+
+        if not has_upd:
+            print(f"✅ O Watcher já está na versão mais recente! (v{curr_v})\n")
+        else:
+            print(f"🎉 Nova versão disponível: v{latest_v} (Versão atual: v{curr_v})")
+            if args.check:
+                print("Execute `watcher update` (sem --check) para instalar a atualização.\n")
+            else:
+                print("📦 Baixando e instalando a versão mais recente do GitHub...")
+                upd_res = updater.perform_update()
+                if upd_res.get("status") == "success":
+                    print(f"✨ {upd_res.get('message')}\n")
+                else:
+                    print(f"❌ {upd_res.get('message')}\n")
 
     elif args.command == "engines":
         scanner = EngineScanner()

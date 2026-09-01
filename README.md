@@ -84,6 +84,22 @@ O Watcher inclui um assistente interativo em Bash para verificar e instalar toda
 
 ---
 
+## 🔄 Atualização Automática (Sem Git / Sem Login GitHub)
+
+O Watcher é capaz de atualizar a si mesmo automaticamente via repositório público do GitHub, **sem exigir que o usuário tenha o Git instalado ou esteja autenticado no GitHub**:
+
+1. **Via Dashboard Web**: Acesse `Configurações ⚙️` no canto superior e clique no botão **`🔄 Checar Atualização`**.
+2. **Via Script Bash**:
+   ```bash
+   ./update.sh
+   ```
+3. **Via Linha de Comando (CLI)**:
+   ```bash
+   watcher update
+   ```
+
+---
+
 ## 🚀 Como Usar
 
 A ferramenta oferece duas formas de uso: **Interface Web (Dashboard)** e **Interface CLI (Linha de Comando)**.
