@@ -6,6 +6,20 @@ This document tracks AI-assisted session changes, architectural decisions, and v
 
 ## 📌 Version History & Session Log
 
+### [v1.4.1] - 2026-09-02
+- **Context & Problem:**
+  1. Developer needed a dynamic "Impact Blacklist" system to hide specific noise files (e.g. `spec/dummy/db/schema.rb`, dummy folders `spec/dummy/`, or migrations) from impact reports while keeping core evaluation active.
+  2. Database migration files (`db/migrate/`, `schema.rb`, `structure.sql`) generated unnecessary impact clutter across multi-engine analyses.
+  3. Stopping the Watcher server via `Ctrl+C` was killing the entire terminal window due to `exec` wrapper in `watcher.sh`.
+  4. The Settings modal UI was too small (`max-width: 450px`), cramped, and required excessive scrolling.
+- **Changes Made:**
+  1. **Impact Blacklist Engine (`src/config.py` & `src/impact_tracer.py`):** Implemented `is_path_blacklisted()` supporting exact file paths, directory prefixes, and glob wildcards (`fnmatch`). Integrated blacklist matching across Ripgrep scan (`-g`), Python fallback scanner, and `_handle_analyze` in `src/server.py`.
+  2. **Quick Hide Actions in UI (`src/ui/index.html`):** Added an "Ações" column to the impact report table with `🚫 Arq` (hide exact file) and `📁 Pasta` (hide parent folder). Clicking any action updates `settings.json` and re-runs impact analysis immediately.
+  3. **DB & Migrations Filter (`hide_db_migrations`):** Added `is_db_migration_file()` helper and UI toggle in Settings to filter database/schema files across diffs and cross-module impact tracing.
+  4. **Graceful Terminal Shutdown (`watcher.sh`):** Removed `exec` from `watcher.sh` so `Ctrl+C` stops the Python process cleanly while preserving the active terminal session.
+  5. **Spacious Settings Modal UI (`src/ui/index.html`):** Redesigned the Settings modal from 450px to `max-width: 860px`, restructuring options into a spacious 2-column grid. Column 1 holds General/Target Folder/Notifications, while Column 2 groups Filters (Banco de Dados & Migrations positioned right above Blacklist de Impactos) and System Status.
+  6. **Hyper-Vivid Cyberpunk Neon Theme (`src/ui/css/themes/neon.css`):** Upgraded Cyberpunk Neon theme with saturated electric cyan `#00f0ff`, hot magenta `#ff007f`, neon green `#00ff88`, 2px thick glowing borders (`box-shadow` neon glow), gradient dual-glow buttons, glowing text-shadows, and neon chip hover transitions.
+
 ### [v1.3.5] - 2026-08-31
 - **Context & Problem:** `src/ui/index.html` contained over 1,060 lines of inline CSS rules and theme overrides mixed into the HTML body.
 - **Changes Made:**
