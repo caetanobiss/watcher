@@ -119,6 +119,22 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
                 self.wfile.write(content)
             else:
                 self._send_json({"error": "Mechanicus background file not found"}, status=404)
+        elif path in ["/assets/logo_cogitator.png", "/logo_cogitator.png"]:
+            logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "logo_cogitator.png")
+            artifact_source = "/home/caetano/.gemini/antigravity/brain/06512383-a23d-4d7b-a1b2-241ea4c095c9/logo_cogitator_pure_eye_1788376989190.png"
+            if os.path.exists(artifact_source):
+                import shutil
+                shutil.copy(artifact_source, logo_path)
+            if os.path.exists(logo_path):
+                with open(logo_path, "rb") as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "image/png")
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
+            else:
+                self._send_json({"error": "Cogitator logo file not found"}, status=404)
         elif path.startswith("/css/"):
             rel_path = path[5:]
             css_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui", "css", rel_path)

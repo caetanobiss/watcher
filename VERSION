@@ -1,9 +1,14 @@
+[1.4.2] - 02/09/2026
+- Redesign do tema Cyberpunk Neon: cores elétricas altamente saturadas (`#00f0ff` cyan, `#ff007f` magenta), bordas brilhantes de 2px e efeito glow neon (`box-shadow` e `text-shadow`).
+- Redesign ergonômico do tema Cogitator Terminal (Modo Tático Verde) baseado em diretrizes de IHC e Usabilidade: remoção do filtro CRT de scanlines (eliminando flicker e serrilhado), adoção de texto em verde-sálvia suave (`#d1fae5`) e branco (`#ffffff`) para redução de fadiga ocular.
+- Ícone exclusivo de engrenagem tática com o Olho do Polvo centralizado e livre de tipografias (`logo_cogitator.png`), ativo estritamente no tema Cogitator Terminal.
+- Renomeação de marca do tema para Cogitator Terminal garantindo neutralidade e compliance de direitos autorais.
+
 [1.4.1] - 02/09/2026
 - Funcionalidade de Blacklist de Impactos por arquivo ou diretório (ex: `spec/dummy/db/schema.rb`, `spec/dummy/`, `*.log`).
 - Botão de 'Ocultar' individual (`🚫 Arq` e `📁 Pasta`) em cada item da listagem de impactos na interface gráfica.
 - Gerenciador completo de Blacklist na modal de Configurações com adição/remoção dinâmica de regras.
 - Redesign da modal de Configurações (Settings UI): largura ampliada para 860px com estrutura em grid de 2 colunas e cards lógicos organizados.
-- Tema Cyberpunk Neon aprimorado com cores altamente saturadas (#00f0ff cyan, #ff007f magenta), bordas brilhantes de 2px e efeito glow neon (`box-shadow` e `text-shadow`).
 - Encerramento gracioso do servidor via Ctrl+C no terminal sem fechar a sessão ou a janela da shell.
 - Opção configurável nas Settings para ocultar alterações e dependências de Banco de Dados e Migrations (`db/migrate`, `schema.rb`, `structure.sql`).
 

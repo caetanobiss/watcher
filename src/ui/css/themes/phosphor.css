@@ -1,64 +1,151 @@
-/* Theme 3: Adeptus Mechanicus (Phosphor Cogitator Terminal) */
+/* Theme 3: Cogitator Terminal (Modo Tático Verde) */
+/* Designed adhering to Ergonomics & HCI principles for optimal legibility & reduced eye strain */
+
 body.theme-phosphor {
-  --bg-dark: #020a04;
-  --panel-bg: rgba(4, 18, 8, 0.94);
-  --panel-border: rgba(0, 255, 102, 0.45);
-  --subpanel-bg: #06160a;
-  --input-bg: #020b04;
-  --chip-bg: #06160a;
-  --table-header-bg: #06160a;
-  --code-bg: #020b04;
-  --terminal-bg: #010602;
-  --btn-sec-bg: #08200e;
-  --btn-sec-text: #66ff99;
-  --btn-sec-border: rgba(0, 255, 102, 0.45);
-  --btn-sec-hover: #0e3015;
-  --text-main: #00ff66;
-  --text-bright: #66ff99;
-  --text-muted: #1e7033;
-  --accent-blue: #33ff77;
-  --accent-purple: #99ffbb;
-  --accent-green: #00ff66;
-  --accent-yellow: #ffff55;
-  --accent-red: #ff3344;
-  --card-glow: 0 0 20px rgba(0, 255, 102, 0.25);
-  --font-sans: 'Share Tech Mono', 'JetBrains Mono', 'Courier New', monospace;
-  --font-mono: 'Share Tech Mono', 'Consolas', monospace;
+  --bg-dark: #070d09;
+  --panel-bg: rgba(13, 22, 16, 0.92);
+  --panel-border: rgba(46, 117, 72, 0.5);
+  --subpanel-bg: #0f1c13;
+  --input-bg: #09120b;
+  --chip-bg: #0f1c13;
+  --table-header-bg: #0c1810;
+  --code-bg: #070e0a;
+  --terminal-bg: #040805;
+  --btn-sec-bg: #122418;
+  --btn-sec-text: #a7f3d0;
+  --btn-sec-border: rgba(52, 211, 153, 0.4);
+  --btn-sec-hover: #1b3624;
+  --text-main: #d1fae5;       /* Ergonomic soft sage-white body text */
+  --text-bright: #ffffff;     /* Crisp high-contrast white headers */
+  --text-muted: #6ee7b7;      /* Legible muted mint label text */
+  --accent-blue: #34d399;     /* Soft Emerald Accent */
+  --accent-purple: #a7f3d0;   /* Light Jade Accent */
+  --accent-green: #10b981;    /* Emerald Green */
+  --accent-yellow: #fbbf24;   /* Amber Cogitator Alert */
+  --accent-red: #f87171;      /* Crimson Red */
+  --accent-orange: #f97316;   /* Tactical Amber Orange */
+  --card-glow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 12px rgba(16, 185, 129, 0.12);
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Share Tech Mono', monospace;
   background-image: 
-    radial-gradient(at 50% 0%, rgba(0, 255, 102, 0.12) 0px, transparent 60%);
+    radial-gradient(at 50% 0%, rgba(16, 185, 129, 0.08) 0px, transparent 65%);
 }
 
+/* Background Artwork Integration */
 body.theme-phosphor::before {
   background-image: url('/assets/bg_mechanicus.png') !important;
-  opacity: 0.65 !important;
+  opacity: 0.25 !important;
   mix-blend-mode: screen !important;
 }
 
+/* Cogitator Terminal Specific Gear Logo (Replaces default octopus logo ONLY in this theme) */
+body.theme-phosphor .brand-logo-container img,
+body.theme-phosphor .scanner-logo-img {
+  content: url('/assets/logo_cogitator.png') !important;
+}
+
+/* Remove CRT Scanlines overlay to eliminate eye-fatigue and serrilhado flicker */
 body.theme-phosphor::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.38) 50%), linear-gradient(90deg, rgba(0, 255, 0, 0.03), rgba(0, 255, 102, 0.01), rgba(0, 255, 0, 0.03));
-  background-size: 100% 3px, 6px 100%;
-  pointer-events: none;
-  z-index: 99999;
-  opacity: 0.65;
+  display: none !important;
 }
 
-body.theme-phosphor .brand-title,
-body.theme-phosphor .stat-value,
-body.theme-phosphor h2,
-body.theme-phosphor h3,
-body.theme-phosphor .btn-primary {
-  text-shadow: 0 0 8px rgba(0, 255, 102, 0.75), 0 0 18px rgba(0, 255, 102, 0.35);
-}
-
+/* Crisp & Ergonomic Card & Border Styles */
 body.theme-phosphor .stat-card,
-body.theme-phosphor .panel,
-body.theme-phosphor .modal-content {
-  border: 1px solid rgba(0, 255, 102, 0.45) !important;
-  box-shadow: inset 0 0 20px rgba(0, 255, 102, 0.08), 0 0 18px rgba(0, 255, 102, 0.18) !important;
+body.theme-phosphor .section-card,
+body.theme-phosphor .modal-content,
+body.theme-phosphor .filter-bar,
+body.theme-phosphor .graph-container {
+  border: 1px solid rgba(52, 211, 153, 0.35) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 0 10px rgba(16, 185, 129, 0.05);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.theme-phosphor .stat-card:hover,
+body.theme-phosphor .section-card:hover {
+  border-color: rgba(52, 211, 153, 0.65) !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45), 0 0 14px rgba(52, 211, 153, 0.2);
+}
+
+/* Inputs & Form Controls */
+body.theme-phosphor select,
+body.theme-phosphor input[type="text"],
+body.theme-phosphor .search-input {
+  border: 1px solid rgba(52, 211, 153, 0.35) !important;
+  color: #ffffff !important;
+  background: #09120b !important;
+}
+
+body.theme-phosphor select:focus,
+body.theme-phosphor input[type="text"]:focus,
+body.theme-phosphor .search-input:focus {
+  border-color: #34d399 !important;
+  box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.2) !important;
+}
+
+/* Clean Sharp Header & Titles */
+body.theme-phosphor .brand-title {
+  color: #ffffff !important;
+  text-shadow: 0 0 12px rgba(52, 211, 153, 0.4);
+}
+
+body.theme-phosphor .stat-value {
+  color: #34d399 !important;
+  text-shadow: none !important;
+}
+
+/* Buttons */
+body.theme-phosphor .btn-primary {
+  background: linear-gradient(135deg, #059669, #10b981) !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3) !important;
+  text-shadow: none !important;
+}
+
+body.theme-phosphor .btn-primary:hover {
+  background: linear-gradient(135deg, #10b981, #34d399) !important;
+  box-shadow: 0 6px 18px rgba(52, 211, 153, 0.4) !important;
+  transform: translateY(-1px);
+}
+
+body.theme-phosphor .btn-secondary {
+  border: 1px solid rgba(52, 211, 153, 0.4) !important;
+  color: #a7f3d0 !important;
+}
+
+body.theme-phosphor .btn-secondary:hover {
+  background: #1b3624 !important;
+  border-color: #34d399 !important;
+  color: #ffffff !important;
+}
+
+/* Table Styling */
+body.theme-phosphor th {
+  background: #0c1810 !important;
+  color: #6ee7b7 !important;
+  border-bottom: 1px solid rgba(52, 211, 153, 0.3) !important;
+}
+
+body.theme-phosphor td {
+  border-bottom: 1px solid rgba(46, 117, 72, 0.3) !important;
+}
+
+/* Tags & Risk Badges */
+body.theme-phosphor .tag-high {
+  background: rgba(248, 113, 113, 0.15) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(248, 113, 113, 0.35) !important;
+}
+
+body.theme-phosphor .tag-medium {
+  background: rgba(251, 191, 36, 0.15) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(251, 191, 36, 0.35) !important;
+}
+
+body.theme-phosphor .tag-low {
+  background: rgba(52, 211, 153, 0.15) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(52, 211, 153, 0.35) !important;
 }

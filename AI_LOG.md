@@ -6,6 +6,18 @@ This document tracks AI-assisted session changes, architectural decisions, and v
 
 ## 📌 Version History & Session Log
 
+### [v1.4.2] - 2026-09-02
+- **Context & Problem:**
+  1. The Cyberpunk Neon theme lacked vivid neon contrast and punchy glowing borders.
+  2. The Phosphor Green theme caused eye strain and headaches due to a flickering CRT scanlines grid, fuzzy text-shadow blurs, and harsh `#00ff66` text.
+  3. The phosphor theme name ("Adeptus Mechanicus") presented trademark compliance risks and required rebranding.
+  4. The theme required a dedicated gear logo icon that incorporated the signature Watcher Octopus Eye in the center, completely free of text/typography graphics.
+- **Changes Made:**
+  1. **Hyper-Vivid Cyberpunk Neon Theme (`src/ui/css/themes/neon.css`):** Upgraded Cyberpunk Neon with electric cyan `#00f0ff`, hot magenta `#ff007f`, neon green `#00ff88`, 2px thick glowing borders (`box-shadow` neon glow), gradient dual-glow buttons, glowing text-shadows, and neon chip hover transitions.
+  2. **Ergonomic Cogitator Terminal Theme (`src/ui/css/themes/phosphor.css`):** Redesigned the theme based on Ergonomics and HCI principles. Disabled the CRT scanline grid overlay (eliminating flicker/serrilhado), replaced harsh green text with ergonomic soft sage `#d1fae5` and high-contrast white `#ffffff`, and removed fuzzy text-shadow blurs for sharp typography legibility.
+  3. **Custom Pure Watcher Eye Gear Emblem (`assets/logo_cogitator.png`):** Generated a custom mechanical gear wheel logo with the signature Watcher Octopus Eye in the center, free of any text or letters (`logo_cogitator_pure_eye`), configured to display exclusively when `body.theme-phosphor` is active.
+  4. **Trademark Compliance & Rebranding:** Renamed theme to "Cogitator Terminal (Modo Tático)" across `index.html`, `phosphor.css`, `VERSION`, and `AI_LOG.md`.
+
 ### [v1.4.1] - 2026-09-02
 - **Context & Problem:**
   1. Developer needed a dynamic "Impact Blacklist" system to hide specific noise files (e.g. `spec/dummy/db/schema.rb`, dummy folders `spec/dummy/`, or migrations) from impact reports while keeping core evaluation active.
@@ -18,7 +30,6 @@ This document tracks AI-assisted session changes, architectural decisions, and v
   3. **DB & Migrations Filter (`hide_db_migrations`):** Added `is_db_migration_file()` helper and UI toggle in Settings to filter database/schema files across diffs and cross-module impact tracing.
   4. **Graceful Terminal Shutdown (`watcher.sh`):** Removed `exec` from `watcher.sh` so `Ctrl+C` stops the Python process cleanly while preserving the active terminal session.
   5. **Spacious Settings Modal UI (`src/ui/index.html`):** Redesigned the Settings modal from 450px to `max-width: 860px`, restructuring options into a spacious 2-column grid. Column 1 holds General/Target Folder/Notifications, while Column 2 groups Filters (Banco de Dados & Migrations positioned right above Blacklist de Impactos) and System Status.
-  6. **Hyper-Vivid Cyberpunk Neon Theme (`src/ui/css/themes/neon.css`):** Upgraded Cyberpunk Neon theme with saturated electric cyan `#00f0ff`, hot magenta `#ff007f`, neon green `#00ff88`, 2px thick glowing borders (`box-shadow` neon glow), gradient dual-glow buttons, glowing text-shadows, and neon chip hover transitions.
 
 ### [v1.3.5] - 2026-08-31
 - **Context & Problem:** `src/ui/index.html` contained over 1,060 lines of inline CSS rules and theme overrides mixed into the HTML body.
