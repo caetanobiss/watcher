@@ -1,0 +1,162 @@
+<!--
+  =============================================================================
+  Component: Settings Modal (modals/settings_modal.html)
+  Description: 860px 2-column Settings modal covering Appearance & Themes,
+               Project Target Path, System Notifications, DB/Migrations Filter,
+               Impact Blacklist Manager, and Engine Status / Auto-Updater.
+  Usage: Included inside modal overlays container.
+  =============================================================================
+-->
+
+<div class="modal" id="settingsModal">
+  <div class="modal-content" style="max-width: 860px; width: 92vw; max-height: 88vh;">
+    <div class="modal-header" style="border-bottom: 1px solid var(--panel-border); padding: 1.1rem 1.5rem;">
+      <h3 style="color: var(--text-bright); display: flex; align-items: center; gap: 0.6rem; font-size: 1.2rem; margin: 0;">
+        ⚙️ Configurações do Sistema
+      </h3>
+      <button class="close-btn" onclick="closeModal('settingsModal')">&times;</button>
+    </div>
+
+    <div class="modal-body" style="padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; overflow-y: auto;">
+      
+      <!-- 2-Column Grid Layout for Settings -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem; align-items: start;">
+        
+        <!-- Column 1: Configurações Gerais & Notificações -->
+        <div style="display: flex; flex-direction: column; gap: 1.1rem;">
+          
+          <!-- Block 1: Appearance & Theme -->
+          <div style="background: var(--subpanel-bg); border: 1px solid var(--panel-border); border-radius: 10px; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+            <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-bright); display: flex; align-items: center; gap: 0.4rem;">
+              🎨 Aparência & Tema Visual
+            </span>
+            <select id="themeSelect" onchange="changeTheme(this.value)" style="width: 100%; padding: 0.55rem 0.75rem; border-radius: 6px; background: var(--input-bg); color: var(--text-bright); border: 1px solid var(--panel-border); font-size: 0.88rem;">
+              <option value="dark" selected>🌙 Dark Modern (Padrão)</option>
+              <option value="light">☀️ Light Clean (Modo Claro)</option>
+              <option value="neon">⚡ Cyberpunk Neon</option>
+              <option value="phosphor">⚙️ Cogitator Terminal (Modo Tático)</option>
+            </select>
+            <div style="font-size: 0.74rem; color: var(--text-muted); line-height: 1.35;">
+              Configurações sincronizadas automaticamente em <code style="font-size: 0.72rem; color: var(--accent-blue);">settings.json</code>.
+            </div>
+          </div>
+
+          <!-- Block 2: Project Path -->
+          <div style="background: var(--subpanel-bg); border: 1px solid var(--panel-border); border-radius: 10px; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+            <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-bright); display: flex; align-items: center; gap: 0.4rem;">
+              📂 Diretório do Projeto Target
+            </span>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="text" id="settingProjectDir" placeholder="Ex: /home/usuario/workspace/auriga_project" style="flex: 1; padding: 0.5rem 0.75rem; background: var(--input-bg); color: var(--text-bright); border: 1px solid var(--panel-border); font-family: var(--font-mono); font-size: 0.82rem; border-radius: 6px;">
+              <button class="btn-primary" onclick="updateProjectDirSettings()" style="padding: 0.5rem 0.9rem; font-size: 0.82rem; white-space: nowrap;">💾 Salvar</button>
+            </div>
+            <div id="activeRootDirBadge" style="font-size: 0.73rem; color: var(--accent-blue); font-family: var(--font-mono);">
+              📍 Caminho ativo: <span id="activeRootDirText">...</span>
+            </div>
+          </div>
+
+          <!-- Block 4: Notifications -->
+          <div style="background: var(--subpanel-bg); border: 1px solid var(--panel-border); border-radius: 10px; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.65rem;">
+            <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-bright);">
+              🔔 Notificações e Avisos
+            </span>
+            
+            <div style="display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.85rem;">
+              <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: var(--text-main);">
+                <span>🔔 Notificação do Sistema (Navegador/OS)</span>
+                <input type="checkbox" id="settingNotifyOS" onchange="updateNotificationSettings()" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent-blue);" checked>
+              </label>
+
+              <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: var(--text-main);">
+                <span>💬 Notificação Flutuante na Tela (Toast)</span>
+                <input type="checkbox" id="settingNotifyToast" onchange="updateNotificationSettings()" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent-blue);" checked>
+              </label>
+
+              <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: var(--text-main);">
+                <span>🔊 Aviso Sonoro ao Concluir Testes</span>
+                <input type="checkbox" id="settingNotifySound" onchange="updateNotificationSettings()" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent-blue);" checked>
+              </label>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Column 2: Filtros de Impacto & Informações do Sistema -->
+        <div style="display: flex; flex-direction: column; gap: 1.1rem;">
+          
+          <!-- Block 3: DB & Migrations -->
+          <div style="background: var(--subpanel-bg); border: 1px solid var(--panel-border); border-radius: 10px; padding: 1rem 1.1rem;">
+            <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-bright); display: block; margin-bottom: 0.5rem;">
+              🗄️ Banco de Dados & Migrations
+            </span>
+            <label style="display: flex; align-items: flex-start; justify-content: space-between; cursor: pointer; color: var(--text-main); font-size: 0.85rem; gap: 0.6rem;">
+              <div>
+                <span style="font-weight: 600; color: var(--text-bright); display: block;">Ocultar Migrations e DB em todas as Engines</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 0.25rem; line-height: 1.35;">
+                  Ignora arquivos em <code style="font-size: 0.72rem; color: var(--accent-orange);">db/migrate/</code>, <code style="font-size: 0.72rem; color: var(--accent-orange);">schema.rb</code> e <code style="font-size: 0.72rem; color: var(--accent-orange);">structure.sql</code> nas análises.
+                </span>
+              </div>
+              <input type="checkbox" id="settingHideDbMigrations" onchange="updateDbMigrationsSetting()" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent-blue); margin-top: 0.15rem;" checked>
+            </label>
+          </div>
+
+          <!-- Block 5: Blacklist de Impactos -->
+          <div style="background: var(--subpanel-bg); border: 1px solid var(--panel-border); border-radius: 10px; padding: 1rem 1.1rem; display: flex; flex-direction: column;">
+            <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-bright); display: block; margin-bottom: 0.35rem;">
+              🔕 Blacklist de Impactos (Arquivos & Pastas Ocultas)
+            </span>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.65rem; line-height: 1.35;">
+              Ignorados na apresentação e cálculo de impacto. Ex: <code style="font-size: 0.72rem; color: var(--accent-orange);">spec/dummy/</code> (pasta) ou <code style="font-size: 0.72rem; color: var(--accent-orange);">db/schema.rb</code> (arquivo).
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.65rem;">
+              <input type="text" id="blacklistInput" placeholder="Ex: spec/dummy/ ou db/schema.rb" style="flex: 1; padding: 0.45rem 0.75rem; background: var(--input-bg); color: var(--text-bright); border: 1px solid var(--panel-border); font-family: var(--font-mono); font-size: 0.8rem; border-radius: 6px;" onkeydown="if(event.key==='Enter') addBlacklistItemFromInput()">
+              <button class="btn-primary" onclick="addBlacklistItemFromInput()" style="padding: 0.45rem 0.85rem; font-size: 0.8rem; white-space: nowrap;">➕ Adicionar</button>
+            </div>
+
+            <div id="blacklistItemsContainer" style="min-height: 150px; max-height: 200px; overflow-y: auto; background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 6px; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.35rem;">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Block 6: Version & System Status -->
+          <div style="background: var(--subpanel-bg); border: 1px solid var(--panel-border); border-radius: 10px; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.65rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="font-size: 0.88rem; font-weight: 700; color: var(--text-bright);">Watcher Engine</span>
+                  <span id="watcherVersionSpan" style="font-size: 0.75rem; font-weight: 600; background: rgba(2, 132, 199, 0.15); color: var(--accent-blue); padding: 0.15rem 0.55rem; border-radius: 12px; border: 1px solid rgba(2, 132, 199, 0.3);">v1.4.3</span>
+                </div>
+                <div style="font-size: 0.74rem; color: var(--text-muted);">
+                  📅 Última Atualização: <b id="watcherLastUpdateSpan">02/09/2026</b>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <button id="checkUpdateBtn" class="btn-secondary" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; border-color: rgba(88, 166, 255, 0.4); color: var(--accent-blue);" onclick="checkForUpdatesUI()">
+                  🔄 Checar Atualização
+                </button>
+
+                <a href="https://github.com/caetanobiss/watcher" target="_blank" rel="noopener noreferrer" 
+                   title="Ver Documentação e README no GitHub"
+                   style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: var(--btn-sec-bg); border: 1px solid var(--btn-sec-border); color: var(--text-bright); text-decoration: none; font-size: 1rem; font-weight: 700; transition: all 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.1);"
+                   onmouseover="this.style.borderColor='var(--accent-blue)'; this.style.color='var(--accent-blue)';"
+                   onmouseout="this.style.borderColor='var(--btn-sec-border)'; this.style.color='var(--text-bright)';">
+                  ❓
+                </a>
+              </div>
+            </div>
+
+            <div id="updateStatusContainer" style="display: none;"></div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; padding-top: 0.75rem; border-top: 1px solid var(--panel-border);">
+        <button class="btn-primary" onclick="closeModal('settingsModal')" style="padding: 0.55rem 1.5rem; font-size: 0.88rem;">Concluído</button>
+      </div>
+    </div>
+  </div>
+</div>

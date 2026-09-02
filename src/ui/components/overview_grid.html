@@ -1,0 +1,53 @@
+<!--
+  =============================================================================
+  Component: Overview Grid (overview_grid.html)
+  Description: Top overview section displaying 2x2 KPI summary cards (Engine,
+               Entities, Impacted Files, Risk) and the Cross-Impact Graph container.
+  Usage: Inserted inside <div class="top-overview-grid"> layout block.
+  =============================================================================
+-->
+
+<!-- KPI Summary Grid 2x2 -->
+<div class="stats-grid-2x2">
+  <div class="stat-card">
+    <div class="stat-title">Engine Selecionada</div>
+    <div class="stat-value" id="kpiEngine">--</div>
+    <div class="stat-desc" id="kpiEngineSub">Selecione uma engine acima</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-title">Entidades Alteradas</div>
+    <div class="stat-value" id="kpiEntities">0</div>
+    <div class="stat-desc">Models, Services...</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-title">Arquivos Impactados</div>
+    <div class="stat-value" id="kpiImpactedFiles">0</div>
+    <div class="stat-desc" id="kpiImpactedEngines">Em 0 outros módulos</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-title">Nível de Risco</div>
+    <div class="stat-value" id="kpiRisk">--</div>
+    <div class="stat-desc" id="kpiRiskSub">🔴 0 Alto | 🟡 0 Médio</div>
+  </div>
+</div>
+
+<!-- Visual Dependency Network -->
+<div class="section-card graph-section-card">
+  <div class="section-header">
+    <div class="section-title">
+      <span>🌐 Grafo de Impacto Cruzado entre Módulos</span>
+    </div>
+  </div>
+  <div class="graph-container">
+    <div class="graph-wrapper">
+      <div class="node-source" id="sourceNode">
+        <div style="font-size: 0.75rem; color: var(--text-muted);">SOURCE ENGINE</div>
+        <div class="node-source-title" id="sourceNodeName">Stock</div>
+      </div>
+      <div style="color: var(--accent-purple); font-weight: 700; font-size: 1.5rem;">➔</div>
+      <div class="node-targets" id="targetNodesContainer">
+        <div style="color: var(--text-muted); font-size: 0.9rem;">Nenhuma análise executada ainda. Clique em "Verifique Impactos".</div>
+      </div>
+    </div>
+  </div>
+</div>

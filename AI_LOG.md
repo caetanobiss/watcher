@@ -6,6 +6,28 @@ This document tracks AI-assisted session changes, architectural decisions, and v
 
 ## 📌 Version History & Session Log
 
+### [v1.4.3] - 2026-09-02
+- **Context & Problem:**
+  `src/ui/index.html` grew into an unmaintainable monolithic file containing 1,800+ lines of mixed HTML markup and inline JavaScript functions, making code maintenance and future feature development difficult and error-prone.
+- **Changes Made:**
+  1. **HTML Component Templates (`src/ui/components/`):** Separated monolithic HTML into documented, reusable template partials:
+     - `header.html`: Top navigation bar with branding, module selector, diff target, and primary action controls.
+     - `overview_grid.html`: 2x2 KPI summary cards and cross-module dependency network graph container.
+     - `impact_list.html`: Impact report table container, severity filters, search bar, and quick hide actions.
+     - `test_runner.html`: RSpec parallel execution dashboard, scope selector, impacted module checkboxes, and live log tabs.
+     - `modals/markdown_modal.html`: Markdown impact report viewer and clipboard exporter.
+     - `modals/ai_export_modal.html`: Structured AI context & prompt exporter for code impacts and RSpec errors.
+     - `modals/settings_modal.html`: 860px 2-column settings modal for themes, project directory, notifications, DB filters, and blacklist manager.
+  2. **Modular JavaScript Engine (`src/ui/js/`):** Extracted 1,344 lines of inline JS into 5 focused ES6/vanilla scripts:
+     - `app.js`: Application lifecycle initialization and global state store.
+     - `api.js`: Low-level backend HTTP requests (`/api/engines`, `/api/analyze`, `/api/settings`, `/api/update/*`).
+     - `scanner.js`: Scanner widget animations, SVG sonar progress ring, SSE live log streamer, test timers, and execution controls.
+     - `renderers.js`: DOM rendering functions for KPI stats, impact tables, risk tags, dependency graph nodes, and test tabs.
+     - `modals.js`: Modal window controls, theme switcher, settings form sync, blacklist manager, and AI prompt generator.
+  3. **Server Component Stitching Engine (`src/server.py`):** Implemented regex-based component stitching in `_serve_ui()` (`{{COMPONENTS:...}}`) and added a static handler for `/js/` with `Content-Type: application/javascript`.
+  4. **Compact Skeleton (`src/ui/index.html`):** Reduced `index.html` from 1,800+ lines to 48 lines of readable skeleton markup.
+  5. **Execução de Testes em Paralelo Total (Monorepo All Engines):** Adicionado suporte no escopo das specs (`all_engines`) e novo botão `🔥 Rodar em TODAS as Engines` para disparar a execução RSpec multithread em todas as engines simultaneamente.
+
 ### [v1.4.2] - 2026-09-02
 - **Context & Problem:**
   1. The Cyberpunk Neon theme lacked vivid neon contrast and punchy glowing borders.

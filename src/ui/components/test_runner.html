@@ -1,0 +1,66 @@
+<!--
+  =============================================================================
+  Component: RSpec Test Runner (test_runner.html)
+  Description: Section for parallel RSpec test suite execution, spec scope selector,
+               impacted module checkboxes, and multithread live log tab viewer.
+  Usage: Inserted inside main content layout as the test execution suite card.
+  =============================================================================
+-->
+
+<div class="section-card">
+  <div class="section-header">
+    <div class="section-title">
+      <span>🧪 Execução de Testes RSpec (Paralelo / Multithread)</span>
+    </div>
+  </div>
+
+  <div class="filter-bar" style="justify-content: space-between;">
+    <div style="display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap;">
+      <button id="runSourceTestBtn" class="btn-primary" onclick="runSourceEngineTest()">
+        <span>▶️ Rodar Testes na Origem (<span id="sourceTestEngineLabel">stock</span>)</span>
+      </button>
+
+      <div class="control-group">
+        <span class="control-label">Escopo das Specs</span>
+        <select id="specScopeSelect">
+          <option value="impacted_only" selected>🎯 Apenas Specs Afetadas (Granular)</option>
+          <option value="models">📦 Apenas Models (spec/models)</option>
+          <option value="services">⚙️ Apenas Services (spec/services)</option>
+          <option value="builders">🏗️ Apenas Builders (spec/builders)</option>
+          <option value="queries">🔍 Apenas Queries (spec/queries)</option>
+          <option value="requests">🌐 Apenas Requests / API (spec/requests)</option>
+          <option value="all">💯 Suíte Completa da Engine (spec)</option>
+          <option value="all_engines">🔥 TODAS as Engines (Paralelo Total no Monorepo)</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <span class="control-label">Módulos Impactados para Testar</span>
+        <div id="impactedCheckboxes" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; background: var(--input-bg); padding: 0.45rem 0.8rem; border-radius: 6px; border: 1px solid var(--panel-border);">
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Execute uma análise de impactos primeiro.</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+      <button id="runSelectedTestsBtn" class="btn-secondary" style="background: linear-gradient(135deg, #1f6beb, #238636); color: #fff; border: none;" onclick="runSelectedEngineTests()">
+        <span>⚡ Rodar Selecionados</span>
+      </button>
+
+      <button id="runAllEnginesBtn" class="btn-secondary" style="background: linear-gradient(135deg, #8957e5, #da3633); color: #fff; border: none; font-weight: 600;" onclick="runAllEnginesTests()" title="Executar testes em todas as engines simultaneamente em paralelo">
+        <span>🔥 Rodar em TODAS as Engines</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Test Execution Results Dashboard (Tabs + Output) -->
+  <div id="testResultsContainer" style="display: none; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+    <div id="testTabsHeader" style="display: flex; gap: 0.5rem; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; overflow-x: auto;">
+      <!-- Dynamic Tabs -->
+    </div>
+
+    <div id="testTabContent" style="background: var(--terminal-bg); border: 1px solid var(--panel-border); border-radius: 8px; padding: 1.25rem; font-family: var(--font-mono); min-height: 250px; color: var(--text-bright);">
+      <!-- Active Tab Content -->
+    </div>
+  </div>
+</div>

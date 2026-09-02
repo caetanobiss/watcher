@@ -1,3 +1,10 @@
+[1.4.3] - 02/09/2026
+- Refatoração completa e componentização da interface do usuário (UI): redução do `index.html` de 1.800+ linhas para 48 linhas de esqueleto semântico.
+- Separação da marcação em componentes HTML modulares documentados em `src/ui/components/` (`header.html`, `overview_grid.html`, `impact_list.html`, `test_runner.html`, e modais sob `components/modals/`).
+- Modularização do JavaScript em arquivos desacoplados e focados em `src/ui/js/` (`app.js`, `api.js`, `scanner.js`, `renderers.js`, `modals.js`).
+- Engine de renderização com stitching dinâmico de componentes zero-latency e rotas estáticas `/js/` em `src/server.py`.
+- Suporte a execução de testes em Paralelo Total para TODAS as engines do monorepo simultaneamente (opção no Escopo das Specs e botão dedicado `🔥 Rodar em TODAS as Engines`).
+
 [1.4.2] - 02/09/2026
 - Redesign do tema Cyberpunk Neon: cores elétricas altamente saturadas (`#00f0ff` cyan, `#ff007f` magenta), bordas brilhantes de 2px e efeito glow neon (`box-shadow` e `text-shadow`).
 - Redesign ergonômico do tema Cogitator Terminal (Modo Tático Verde) baseado em diretrizes de IHC e Usabilidade: remoção do filtro CRT de scanlines (eliminando flicker e serrilhado), adoção de texto em verde-sálvia suave (`#d1fae5`) e branco (`#ffffff`) para redução de fadiga ocular.

@@ -1,0 +1,57 @@
+<!--
+  =============================================================================
+  Component: AI Export Modal (modals/ai_export_modal.html)
+  Description: Modal offering single-click export options for impacted files context,
+               RSpec terminal error logs, and unified AI prompt builder.
+  Usage: Included at the end of index.html inside modal overlays container.
+  =============================================================================
+-->
+
+<div class="modal" id="aiExportModal">
+  <div class="modal-content" style="max-width: 550px;">
+    <div class="modal-header">
+      <h3 style="color: var(--text-bright); display: flex; align-items: center; gap: 0.5rem;">🤖 Exportar Logs & Contexto para IA</h3>
+      <button class="close-btn" onclick="closeModal('aiExportModal')">&times;</button>
+    </div>
+    <div class="modal-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+      <div style="font-size: 0.85rem; color: var(--text-muted);">
+        Baixe os relatórios estruturados e logs capturados, formatados como prompts prontos para enviar diretamente para a sua IA (ChatGPT, Claude, Gemini, Cursor...).
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+        <!-- Option 1: Impacted Files -->
+        <div style="background: var(--subpanel-bg); border: 1px solid var(--panel-border); border-radius: 8px; padding: 1rem; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 0.9rem; font-weight: 700; color: var(--text-bright);">📁 Contexto de Arquivos Impactados</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">Lista caminhos de arquivos, números de linha e símbolos alterados.</div>
+          </div>
+          <button class="btn-secondary" style="font-size: 0.85rem; border-color: rgba(88, 166, 255, 0.4); color: var(--accent-blue); padding: 0.4rem 0.9rem;" onclick="downloadImpactsLogForAI()">
+            📥 Baixar .txt
+          </button>
+        </div>
+
+        <!-- Option 2: RSpec Error Logs -->
+        <div style="background: var(--subpanel-bg); border: 1px solid var(--panel-border); border-radius: 8px; padding: 1rem; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 0.9rem; font-weight: 700; color: var(--text-bright);">🧪 Log de Erros e Falhas do RSpec</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">Saída inteira do terminal com stack traces e falhas de specs.</div>
+          </div>
+          <button class="btn-secondary" style="font-size: 0.85rem; border-color: rgba(210, 153, 34, 0.4); color: var(--accent-yellow); padding: 0.4rem 0.9rem;" onclick="downloadRSpecLogForAI()">
+            📥 Baixar .txt
+          </button>
+        </div>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid var(--panel-border); margin: 0.2rem 0;" />
+
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
+        <button class="btn-secondary" style="border-color: rgba(63, 185, 80, 0.4); color: var(--accent-green);" onclick="copyAIPromptToClipboard()">
+          📋 Copiar Prompt Unificado
+        </button>
+        <button class="btn-primary" onclick="closeModal('aiExportModal')">
+          Concluído
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

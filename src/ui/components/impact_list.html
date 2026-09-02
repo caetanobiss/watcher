@@ -1,0 +1,68 @@
+<!--
+  =============================================================================
+  Component: Impact Explorer & Table (impact_list.html)
+  Description: Section displaying filter controls (Module, Severity, Search Input)
+               and the full impact report table with quick hide actions.
+  Usage: Inserted inside main content layout as the core impact report view.
+  =============================================================================
+-->
+
+<div class="section-card">
+  <div class="section-header">
+    <div class="section-title">
+      <span>🔍 Detalhamento de Impactos por Módulo</span>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="control-group">
+      <span class="control-label">Filtrar por Módulo</span>
+      <select id="filterEngine" onchange="applyFilters()">
+        <option value="ALL">Todos os Módulos Impactados</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <span class="control-label">Severidade</span>
+      <select id="filterSeverity" onchange="applyFilters()">
+        <option value="ALL">Todas Severidades</option>
+        <option value="HIGH">🔴 Alta Severidade</option>
+        <option value="MEDIUM">🟡 Média Severidade</option>
+        <option value="LOW">🟢 Baixa Severidade</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <span class="control-label">Buscar</span>
+      <input type="text" id="searchInput" class="search-input" placeholder="Filtrar por arquivo ou termo..." oninput="applyFilters()">
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Módulo Afetado</th>
+          <th>Arquivo & Linha</th>
+          <th>Categoria</th>
+          <th>Severidade</th>
+          <th>Código / Termo de Impacto</th>
+          <th style="text-align: center; width: 110px;">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="impactTableBody">
+        <tr>
+          <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+            Selecione uma engine e clique em <b>"Verifique Impactos"</b> para analisar alterações do Git diff.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="expandTableContainer" style="display: none; justify-content: center; padding-top: 1rem; border-top: 1px solid var(--panel-border); margin-top: 0.5rem;">
+    <button id="expandTableBtn" class="btn-secondary" style="border-radius: 20px; padding: 0.5rem 1.5rem; font-weight: 600; color: var(--accent-blue); border-color: rgba(88, 166, 255, 0.4);" onclick="toggleTableExpand()">
+      👇 Mostrar Todos os Impactos
+    </button>
+  </div>
+</div>

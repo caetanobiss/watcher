@@ -1,0 +1,62 @@
+<!--
+  =============================================================================
+  Component: Header Bar (header.html)
+  Description: Top navigation header with brand logo, category/engine dropdowns,
+               git diff target selection, and primary action buttons.
+  Usage: Included dynamically into the main layout shell inside <header> tag.
+  =============================================================================
+-->
+
+<div class="brand">
+  <div class="brand-logo-container" id="headerLogoContainer">
+    <img src="/assets/logo.png" alt="Watcher Octopus Logo" style="width: 78px; height: 78px; border-radius: 50%; border: 1px solid var(--panel-border); object-fit: cover; box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);" />
+  </div>
+  <div style="display: flex; flex-direction: column; justify-content: center;">
+    <div class="brand-title">Watcher</div>
+    <div class="brand-subtitle">Multi-Engine Cross Impact Analyzer</div>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="control-group">
+    <span class="control-label">Tipo de Módulo</span>
+    <select id="categorySelect" onchange="filterEnginesByType()" style="height: 38px;">
+      <option value="backend" selected>Backend (Rails Engines)</option>
+      <option value="frontend">Frontend Applications</option>
+      <option value="ALL">Todos os Módulos (46)</option>
+    </select>
+  </div>
+
+  <div class="control-group">
+    <span class="control-label">Target Engine (Source)</span>
+    <select id="engineSelect" style="height: 38px;">
+      <option value="">Carregando engines...</option>
+    </select>
+  </div>
+
+  <div class="control-group">
+    <span class="control-label">Git Diff Target</span>
+    <select id="diffTarget" style="height: 38px;">
+      <option value="working">Uncommitted Changes (Working Tree)</option>
+      <option value="staged">Staged Changes</option>
+      <option value="branch">Branch vs Master</option>
+      <option value="last_commit">Last Commit (HEAD~1)</option>
+    </select>
+  </div>
+
+  <button id="analyzeBtn" class="btn-primary" style="height: 38px; padding: 0 1.2rem;" onclick="runAnalysis()">
+    <span>⚡ Verifique Impactos</span>
+  </button>
+
+  <button class="btn-secondary" style="height: 38px; padding: 0 1rem;" onclick="exportMarkdown()">
+    📋 Exportar Report
+  </button>
+
+  <button class="btn-secondary" style="height: 38px; padding: 0 1rem; border-color: rgba(0, 243, 255, 0.4); color: var(--accent-blue);" onclick="openModal('aiExportModal')" title="Exportar Logs e Prompts Estruturados para IA">
+    🤖 Baixar Logs IA
+  </button>
+
+  <button class="btn-secondary" style="height: 38px; padding: 0 0.85rem; font-size: 1.15rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-left: 0.25rem;" title="Configurações" onclick="openModal('settingsModal')">
+    ⚙️
+  </button>
+</div>

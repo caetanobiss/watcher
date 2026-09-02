@@ -150,6 +150,21 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
                 self.wfile.write(content)
             else:
                 self._send_json({"error": "CSS file not found"}, status=404)
+        elif path.startswith("/js/"):
+            rel_path = path[4:]
+            js_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui", "js", rel_path)
+            js_file_path = os.path.abspath(js_file_path)
+            js_base_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui", "js"))
+            if js_file_path.startswith(js_base_dir) and os.path.exists(js_file_path) and os.path.isfile(js_file_path):
+                with open(js_file_path, "rb") as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/javascript; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
+            else:
+                self._send_json({"error": "JS file not found"}, status=404)
         else:
             self._send_json({"error": "Endpoint not found"}, status=404)
 
@@ -178,7 +193,7 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
                 self._handle_run_tests(body)
         elif path == "/api/cancel-tests":
             self.test_runner.cancel_all_tests()
-            self._send_json({"status": "success", "message": "Execução de testes cancelada com sucesso."})
+            self._send_json({"status": "success", "message": "Tests cancelled"})
         elif path == "/api/settings":
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
@@ -186,14 +201,13 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
                 body = json.loads(post_data.decode('utf-8'))
             except Exception:
                 body = {}
-            save_settings(body)
-            WatcherHTTPHandler.refresh_config()
+            new_settings = save_settings(body)
+            if "project_dir" in body:
+                WatcherHTTPHandler.refresh_config()
             self._send_json({
                 "status": "success",
-                "settings": load_settings(),
-                "active_root_dir": self.scanner.root_dir,
-                "version": VERSION,
-                "last_update": LAST_UPDATE
+                "settings": new_settings,
+                "active_root_dir": self.scanner.root_dir
             })
         elif path == "/api/update/perform":
             from src.updater import WatcherUpdater
@@ -207,9 +221,24 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
 
     def _serve_ui(self):
         ui_path = os.path.join(os.path.dirname(__file__), "ui", "index.html")
+        components_dir = os.path.join(os.path.dirname(__file__), "ui", "components")
         if os.path.exists(ui_path):
-            with open(ui_path, "rb") as f:
-                content = f.read()
+            with open(ui_path, "r", encoding="utf-8") as f:
+                html_content = f.read()
+
+            import re
+            pattern = re.compile(r'\{\{COMPONENTS:([a-zA-Z0-9_/.-]+)\}\}')
+            def replace_component(match):
+                comp_name = match.group(1)
+                comp_path = os.path.abspath(os.path.join(components_dir, comp_name))
+                if comp_path.startswith(components_dir) and os.path.exists(comp_path):
+                    with open(comp_path, "r", encoding="utf-8") as cf:
+                        return cf.read()
+                return f"<!-- Component {comp_name} not found -->"
+
+            html_content = pattern.sub(replace_component, html_content)
+            content = html_content.encode("utf-8")
+
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(content)))
