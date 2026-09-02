@@ -5,7 +5,7 @@ import re
 import shutil
 from typing import List, Dict, Any, Set
 
-from src.config import get_default_root_dir
+from src.config import get_default_root_dir, is_db_migration_file, is_path_blacklisted
 from src.dependency_graph import DependencyGraph
 
 # Common generic words that should never be searched as un-scoped wildcards
@@ -24,7 +24,7 @@ class ImpactTracer:
         self.root_dir = get_default_root_dir(root_dir)
         self.graph = DependencyGraph(self.root_dir)
 
-    def trace_impacts(self, source_engine: str, entities: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def trace_impacts(self, source_engine: str, entities: List[Dict[str, Any]], hide_db_migrations: bool = True, impact_blacklist: list = None) -> Dict[str, Any]:
         """Traces references to all entities across modules that depend on source_engine."""
         rg_installed = shutil.which('rg') is not None
         if not entities:
@@ -94,7 +94,7 @@ class ImpactTracer:
             }
 
         # Run scan (ripgrep or fallback python scanner)
-        raw_matches, actual_rg_used = self._execute_scan(search_terms, source_engine)
+        raw_matches, actual_rg_used = self._execute_scan(search_terms, source_engine, hide_db_migrations, impact_blacklist)
 
         # Process and filter matches based on Gemfile dependency graph
         engine_impacts = {}
@@ -104,6 +104,12 @@ class ImpactTracer:
             target_engine = match["target_engine"]
             if target_engine == source_engine or target_engine == "watcher":
                 continue # Ignore self
+
+            file_path = match["file_path"]
+            if hide_db_migrations and is_db_migration_file(file_path):
+                continue
+            if impact_blacklist and is_path_blacklisted(file_path, impact_blacklist):
+                continue
 
             line_text = match["line_text"]
             matched_term = match["matched_term"]
@@ -116,7 +122,6 @@ class ImpactTracer:
             if not is_declared_consumer and not has_explicit_ns:
                 continue # Skip unrelated modules that don't import this engine!
 
-            file_path = match["file_path"]
             line_num = match["line_num"]
 
             total_impacted_files_set.add(f"{target_engine}:{file_path}")
@@ -175,18 +180,18 @@ class ImpactTracer:
             "rg_installed": actual_rg_used
         }
 
-    def _execute_scan(self, search_terms: set, source_engine: str) -> tuple[List[Dict[str, Any]], bool]:
+    def _execute_scan(self, search_terms: set, source_engine: str, hide_db_migrations: bool = True, impact_blacklist: list = None) -> tuple[List[Dict[str, Any]], bool]:
         """Executes search via ripgrep if available, seamlessly falling back to Python scanner."""
         if shutil.which('rg'):
             try:
-                matches = self._run_ripgrep_scan(search_terms, source_engine)
+                matches = self._run_ripgrep_scan(search_terms, source_engine, hide_db_migrations, impact_blacklist)
                 return matches, True
             except (FileNotFoundError, OSError):
                 pass
 
-        return self._run_python_scan(search_terms, source_engine), False
+        return self._run_python_scan(search_terms, source_engine, hide_db_migrations, impact_blacklist), False
 
-    def _run_ripgrep_scan(self, search_terms: set, source_engine: str) -> List[Dict[str, Any]]:
+    def _run_ripgrep_scan(self, search_terms: set, source_engine: str, hide_db_migrations: bool = True, impact_blacklist: list = None) -> List[Dict[str, Any]]:
         """Constructs and executes ripgrep command for fast pattern matching."""
         escaped_terms = [re.escape(term) for term in search_terms]
         regex_pattern = "(" + "|".join(escaped_terms) + ")"
@@ -205,6 +210,9 @@ class ImpactTracer:
             '-g', '!coverage/**',
             '-g', '!.git/**'
         ]
+
+        if hide_db_migrations:
+            cmd.extend(['-g', '!**/db/**', '-g', '!*schema.rb', '-g', '!*structure.sql'])
 
         proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
         matches = []
@@ -226,6 +234,12 @@ class ImpactTracer:
                     target_engine = parts[0] if parts else "unknown"
 
                     file_rel_engine = os.sep.join(parts[1:]) if len(parts) > 1 else rel_path
+                    
+                    if hide_db_migrations and is_db_migration_file(file_rel_engine):
+                        continue
+                    if impact_blacklist and (is_path_blacklisted(file_rel_engine, impact_blacklist) or is_path_blacklisted(rel_path, impact_blacklist)):
+                        continue
+
                     line_num = match_data['line_number']
                     line_text = match_data['lines']['text']
 
@@ -248,7 +262,7 @@ class ImpactTracer:
 
         return matches
 
-    def _run_python_scan(self, search_terms: set, source_engine: str) -> List[Dict[str, Any]]:
+    def _run_python_scan(self, search_terms: set, source_engine: str, hide_db_migrations: bool = True, impact_blacklist: list = None) -> List[Dict[str, Any]]:
         """Fallback pure-Python scanner when ripgrep ('rg') executable is missing in PATH."""
         matches = []
         escaped_terms = [re.escape(term) for term in search_terms]
@@ -258,6 +272,8 @@ class ImpactTracer:
             source_engine, 'watcher', 'node_modules', 'log', 'tmp',
             'coverage', '.git', '.bundle', 'dist', 'build', '.idea', '.vscode', '__pycache__'
         }
+        if hide_db_migrations:
+            ignored_dirs.add('db')
 
         ignored_exts = {
             '.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf', '.zip', '.gz',
@@ -288,6 +304,11 @@ class ImpactTracer:
                     continue
 
                 file_rel_engine = os.sep.join(f_parts[1:]) if len(f_parts) > 1 else rel_path
+
+                if hide_db_migrations and is_db_migration_file(file_rel_engine):
+                    continue
+                if impact_blacklist and (is_path_blacklisted(file_rel_engine, impact_blacklist) or is_path_blacklisted(rel_path, impact_blacklist)):
+                    continue
 
                 try:
                     with open(abs_path, 'r', encoding='utf-8', errors='ignore') as f:

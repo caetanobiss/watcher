@@ -5,7 +5,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 from typing import Dict, Any
 
-from src.config import VERSION, LAST_UPDATE
+from src.config import VERSION, LAST_UPDATE, is_db_migration_file, is_path_blacklisted
 from src.engine_scanner import EngineScanner
 from src.git_diff_extractor import GitDiffExtractor
 from src.entity_parser import EntityParser
@@ -21,7 +21,9 @@ def load_settings() -> Dict[str, Any]:
         "notifications_enabled": True,
         "toasts_enabled": True,
         "sound_enabled": True,
-        "project_dir": "auriga_project"
+        "project_dir": "auriga_project",
+        "hide_db_migrations": True,
+        "impact_blacklist": []
     }
     if os.path.exists(SETTINGS_FILE):
         try:
@@ -217,11 +219,23 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
     def _handle_analyze(self, body: Dict[str, Any]):
         engine = body.get("engine", "stock")
         target = body.get("target", "working")
+        settings = load_settings()
+        hide_db_migrations = settings.get("hide_db_migrations", True)
+        impact_blacklist = settings.get("impact_blacklist", [])
 
         try:
             # 1. Diff
             diff_data = self.diff_extractor.get_engine_diff(engine, target)
             diff_files = diff_data.get("files", [])
+
+            if hide_db_migrations or impact_blacklist:
+                diff_files = [
+                    f for f in diff_files
+                    if not (hide_db_migrations and is_db_migration_file(f.get("file_path", ""))) and
+                    not (impact_blacklist and is_path_blacklisted(f.get("file_path", ""), impact_blacklist))
+                ]
+                diff_data["files"] = diff_files
+                diff_data["total_changed_files"] = len(diff_files)
 
             # 2. Entity Parsing
             parser = EntityParser(engine)
@@ -239,12 +253,16 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
                             for f in files:
                                 if f.endswith('.rb'):
                                     rel = os.path.relpath(os.path.join(root, f), engine_path)
+                                    if hide_db_migrations and is_db_migration_file(rel):
+                                        continue
+                                    if impact_blacklist and is_path_blacklisted(rel, impact_blacklist):
+                                        continue
                                     sample_files.append({"file_path": rel, "full_path": os.path.join(root, f), "status": "modified"})
                 parsed_entities = parser.parse_changed_files(sample_files[:10])
                 entities_list = parsed_entities.get("entities", [])
 
             # 3. Cross-Module Tracer
-            raw_impact_report = self.tracer.trace_impacts(engine, entities_list)
+            raw_impact_report = self.tracer.trace_impacts(engine, entities_list, hide_db_migrations=hide_db_migrations, impact_blacklist=impact_blacklist)
 
             # 4. Risk Evaluator
             final_report = self.evaluator.evaluate_impacts(raw_impact_report, entities_list)

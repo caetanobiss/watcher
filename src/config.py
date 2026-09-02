@@ -1,12 +1,13 @@
 import os
 import json
 import re
+import fnmatch
 
 def get_version_info():
     """Reads VERSION file to get the latest version number string and date."""
     version_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "VERSION")
-    latest_ver = "1.3.1"
-    latest_date = "31/08/2026"
+    latest_ver = "1.4.1"
+    latest_date = "02/09/2026"
     if os.path.exists(version_file):
         try:
             with open(version_file, "r", encoding="utf-8") as f:
@@ -26,6 +27,58 @@ def get_version_info():
     return latest_ver, latest_date
 
 VERSION, LAST_UPDATE = get_version_info()
+
+def is_db_migration_file(file_path: str) -> bool:
+    """Checks if a file path belongs to database migrations, schema definitions, or DB configs."""
+    if not file_path:
+        return False
+    p = file_path.lower().replace('\\', '/')
+    return (
+        p.startswith('db/') or
+        '/db/' in p or
+        'db/migrate/' in p or
+        p.endswith('schema.rb') or
+        p.endswith('structure.sql') or
+        p.endswith('_migration.rb')
+    )
+
+def is_path_blacklisted(file_path: str, blacklist: list) -> bool:
+    """
+    Checks if a file_path matches any rule in the impact_blacklist.
+    Rules can be:
+    - Specific file: 'spec/dummy/db/schema.rb' or 'app/models/foo.rb'
+    - Folder prefix: 'spec/dummy/db/' or 'spec/dummy/'
+    - Wildcard pattern: '*.log' or '*/dummy/*'
+    """
+    if not file_path or not blacklist:
+        return False
+
+    fp = file_path.strip().replace('\\', '/').lower()
+
+    for pattern in blacklist:
+        if not pattern or not isinstance(pattern, str):
+            continue
+        p = pattern.strip().replace('\\', '/').lower()
+        if not p:
+            continue
+
+        # Wildcard pattern (* or ?)
+        if '*' in p or '?' in p:
+            if fnmatch.fnmatch(fp, p) or fnmatch.fnmatch(os.path.basename(fp), p):
+                return True
+            continue
+
+        # Directory pattern (ends with '/')
+        if p.endswith('/'):
+            dir_p = p.rstrip('/')
+            if fp == dir_p or fp.startswith(p) or f"/{p}" in fp or f"/{dir_p}/" in fp or fp.startswith(f"{dir_p}/"):
+                return True
+        else:
+            # Exact file match or path ending / substring match
+            if fp == p or fp.endswith('/' + p) or p in fp:
+                return True
+
+    return False
 
 def get_default_root_dir(root_dir: str = None) -> str:
     """

@@ -55,4 +55,4 @@ echo -e "${NC}"
     fi
 ) &
 
-exec python3 "${SCRIPT_PATH}" server --port "${PORT}"
+python3 "${SCRIPT_PATH}" server --port "${PORT}"

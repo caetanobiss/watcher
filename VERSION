@@ -1,3 +1,10 @@
+[1.4.1] - 02/09/2026
+- Funcionalidade de Blacklist de Impactos por arquivo ou diretório (ex: `spec/dummy/db/schema.rb`, `spec/dummy/`, `*.log`).
+- Botão de 'Ocultar' individual em cada item da listagem de impactos na interface gráfica.
+- Gerenciador completo de Blacklist na modal de Configurações com adição/remoção dinâmica de regras.
+- Encerramento gracioso do servidor via Ctrl+C no terminal sem fechar a sessão ou a janela da shell.
+- Opção configurável nas Settings para ocultar alterações e dependências de Banco de Dados e Migrations (`db/migrate`, `schema.rb`, `structure.sql`).
+
 [1.4.0] - 01/09/2026
 - Scanner nativo em Python (`_run_python_scan`) como fallback automático de busca quando o Ripgrep (`rg`) não estiver instalado.
 - Script de instalação interativo `install.sh` com verificação de dependências (`python3`, `git`, `ripgrep`, atalho global `watcher`).

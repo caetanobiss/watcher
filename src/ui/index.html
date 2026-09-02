@@ -161,11 +161,12 @@
               <th>Categoria</th>
               <th>Severidade</th>
               <th>Código / Termo de Impacto</th>
+              <th style="text-align: center; width: 110px;">Ações</th>
             </tr>
           </thead>
           <tbody id="impactTableBody">
             <tr>
-              <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">
                 Selecione uma engine e clique em <b>"Verifique Impactos"</b> para analisar alterações do Git diff.
               </td>
             </tr>
@@ -330,6 +331,43 @@
           </div>
           <div id="activeRootDirBadge" style="font-size: 0.73rem; color: var(--accent-blue); margin-top: 0.4rem; font-family: var(--font-mono);">
             📍 Caminho ativo: <span id="activeRootDirText">...</span>
+          </div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--panel-border); margin: 0.2rem 0;" />
+
+        <!-- Database & Migrations Filter Setting -->
+        <div class="control-group">
+          <span class="control-label" style="font-size: 0.9rem; font-weight: 600; color: var(--text-bright); display: block; margin-bottom: 0.5rem;">🗄️ Banco de Dados & Migrations</span>
+          <label style="display: flex; align-items: flex-start; justify-content: space-between; cursor: pointer; color: var(--text-main); font-size: 0.85rem; gap: 0.5rem;">
+            <div>
+              <span style="font-weight: 600; color: var(--text-bright); display: block;">Ocultar Migrations e DB em todas as Engines</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 0.2rem;">
+                Oculta arquivos em <code style="font-size: 0.72rem; color: var(--accent-orange);">db/migrate/</code>, <code style="font-size: 0.72rem; color: var(--accent-orange);">schema.rb</code> e <code style="font-size: 0.72rem; color: var(--accent-orange);">structure.sql</code> da lista e da busca de impactos.
+              </span>
+            </div>
+            <input type="checkbox" id="settingHideDbMigrations" onchange="updateDbMigrationsSetting()" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent-blue); margin-top: 0.2rem;" checked>
+          </label>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--panel-border); margin: 0.2rem 0;" />
+
+        <!-- Impact Blacklist Section -->
+        <div class="control-group">
+          <span class="control-label" style="font-size: 0.9rem; font-weight: 600; color: var(--text-bright); display: block; margin-bottom: 0.4rem;">
+            🔕 Blacklist de Impactos (Arquivos & Pastas Ocultas)
+          </span>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.6rem; line-height: 1.35;">
+            Os itens na blacklist são ignorados na apresentação e cálculo de impacto entre módulos. Ex: <code style="font-size: 0.72rem; color: var(--accent-orange);">spec/dummy/</code> (pasta) ou <code style="font-size: 0.72rem; color: var(--accent-orange);">db/schema.rb</code> (arquivo).
+          </div>
+          
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.6rem;">
+            <input type="text" id="blacklistInput" placeholder="Ex: spec/dummy/ ou db/schema.rb" style="flex: 1; padding: 0.45rem 0.75rem; background: var(--input-bg); color: var(--text-bright); border: 1px solid var(--panel-border); font-family: var(--font-mono); font-size: 0.8rem; border-radius: 6px;" onkeydown="if(event.key==='Enter') addBlacklistItemFromInput()">
+            <button class="btn-primary" onclick="addBlacklistItemFromInput()" style="padding: 0.45rem 0.85rem; font-size: 0.8rem; white-space: nowrap;">➕ Adicionar</button>
+          </div>
+
+          <div id="blacklistItemsContainer" style="max-height: 150px; overflow-y: auto; background: var(--subpanel-bg); border: 1px solid var(--panel-border); border-radius: 6px; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.35rem;">
+            <!-- Rendered dynamically -->
           </div>
         </div>
 
@@ -697,11 +735,13 @@
         const tr = document.createElement('tr');
         const sev = item.match.severity || item.fileSeverity;
         const tagClass = 'tag-' + sev.toLowerCase();
+        const filePath = item.fileObj.file_path;
+        const folderPath = getFileFolderPath(filePath);
 
         tr.innerHTML = `
           <td style="font-weight: 600; color: var(--accent-purple);">${item.targetName}</td>
           <td>
-            <span class="file-link">${item.fileObj.file_path}</span>
+            <span class="file-link">${filePath}</span>
             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Linha ${item.match.line_num}</div>
           </td>
           <td><span style="font-size: 0.8rem; text-transform: capitalize;">${item.match.category.replace('_', ' ')}</span></td>
@@ -710,6 +750,16 @@
             <div class="code-block">${highlightTerm(escapeHtml(item.match.line_text), escapeHtml(item.match.matched_term))}</div>
             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">${item.match.risk_reason || ''}</div>
           </td>
+          <td style="text-align: center; vertical-align: middle;">
+            <div style="display: flex; gap: 0.3rem; justify-content: center;">
+              <button onclick="addToImpactBlacklist('${escapeJsString(filePath)}', false)" title="Ocultar este arquivo específico (${filePath})" style="background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.2rem 0.45rem; font-size: 0.72rem; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.2rem; transition: all 0.2s;">
+                🚫 Arq
+              </button>
+              <button onclick="addToImpactBlacklist('${escapeJsString(folderPath)}', true)" title="Ocultar pasta inteira (${folderPath})" style="background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); padding: 0.2rem 0.45rem; font-size: 0.72rem; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.2rem; transition: all 0.2s;">
+                📁 Pasta
+              </button>
+            </div>
+          </td>
         `;
         tbody.appendChild(tr);
       });
@@ -717,7 +767,7 @@
       if (totalCount === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">
               Nenhum resultado encontrado para os filtros selecionados.
             </td>
           </tr>
@@ -1249,7 +1299,8 @@
     let userNotificationSettings = {
       notifications_enabled: true,
       toasts_enabled: true,
-      sound_enabled: true
+      sound_enabled: true,
+      impact_blacklist: []
     };
 
     function playNotificationSound(success = true) {
@@ -1444,10 +1495,12 @@
           userNotificationSettings.notifications_enabled = s.notifications_enabled !== false;
           userNotificationSettings.toasts_enabled = s.toasts_enabled !== false;
           userNotificationSettings.sound_enabled = s.sound_enabled !== false;
+          userNotificationSettings.impact_blacklist = Array.isArray(s.impact_blacklist) ? s.impact_blacklist : [];
 
           const osElem = document.getElementById('settingNotifyOS');
           const toastElem = document.getElementById('settingNotifyToast');
           const soundElem = document.getElementById('settingNotifySound');
+          const hideDbElem = document.getElementById('settingHideDbMigrations');
           const projDirElem = document.getElementById('settingProjectDir');
           const activeRootDirText = document.getElementById('activeRootDirText');
           const versionSpan = document.getElementById('watcherVersionSpan');
@@ -1456,10 +1509,13 @@
           if (osElem) osElem.checked = userNotificationSettings.notifications_enabled;
           if (toastElem) toastElem.checked = userNotificationSettings.toasts_enabled;
           if (soundElem) soundElem.checked = userNotificationSettings.sound_enabled;
+          if (hideDbElem) hideDbElem.checked = s.hide_db_migrations !== false;
           if (projDirElem) projDirElem.value = s.project_dir || '';
           if (activeRootDirText) activeRootDirText.textContent = data.active_root_dir || 'Desconhecido';
           if (versionSpan && data.version) versionSpan.textContent = `v${data.version}`;
           if (lastUpdateSpan && data.last_update) lastUpdateSpan.textContent = data.last_update;
+
+          renderBlacklistItems();
         }
       } catch (err) {
         console.error('Failed to load settings from server:', err);
@@ -1574,6 +1630,121 @@
       } catch (err) {
         console.error('Failed to save notification settings:', err);
       }
+    }
+
+    async function updateDbMigrationsSetting() {
+      const hideVal = document.getElementById('settingHideDbMigrations').checked;
+      try {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hide_db_migrations: hideVal })
+        });
+        showToast('🗄️ Configuração Salva', hideVal ? 'Migrations e DB ocultados das análises!' : 'Migrations e DB visíveis nas análises.', 'info');
+      } catch (err) {
+        console.error('Failed to save hide_db_migrations setting:', err);
+      }
+    }
+
+    // Blacklist Helper Functions
+    function getFileFolderPath(filePath) {
+      if (!filePath) return '';
+      const idx = filePath.lastIndexOf('/');
+      if (idx !== -1) {
+        return filePath.substring(0, idx + 1);
+      }
+      return filePath + '/';
+    }
+
+    function escapeJsString(str) {
+      if (!str) return '';
+      return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    function renderBlacklistItems() {
+      const container = document.getElementById('blacklistItemsContainer');
+      if (!container) return;
+
+      const list = userNotificationSettings.impact_blacklist || [];
+      if (list.length === 0) {
+        container.innerHTML = `<div style="font-size: 0.78rem; color: var(--text-muted); text-align: center; padding: 0.5rem;">Nenhum item na blacklist de impactos.</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(item => `
+        <div style="display: flex; align-items: center; justify-content: space-between; background: var(--panel-bg); border: 1px solid var(--panel-border); padding: 0.35rem 0.6rem; border-radius: 4px; font-size: 0.78rem;">
+          <span style="font-family: var(--font-mono); color: var(--accent-orange); word-break: break-all;">${escapeHtml(item)}</span>
+          <button onclick="removeFromImpactBlacklist('${escapeJsString(item)}')" title="Remover da Blacklist" style="background: transparent; border: none; color: var(--accent-red, #ef4444); cursor: pointer; font-size: 0.85rem; padding: 0 0.2rem;">🗑️</button>
+        </div>
+      `).join('');
+    }
+
+    async function addToImpactBlacklist(pattern, isFolder = false) {
+      if (!pattern) return;
+      let cleanPattern = pattern.trim();
+      if (isFolder && !cleanPattern.endsWith('/')) {
+        cleanPattern += '/';
+      }
+
+      if (!userNotificationSettings.impact_blacklist) {
+        userNotificationSettings.impact_blacklist = [];
+      }
+
+      if (userNotificationSettings.impact_blacklist.includes(cleanPattern)) {
+        showToast('⚠️ Já na Blacklist', `O padrão '${cleanPattern}' já está registrado.`, 'warning');
+        return;
+      }
+
+      userNotificationSettings.impact_blacklist.push(cleanPattern);
+
+      try {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ impact_blacklist: userNotificationSettings.impact_blacklist })
+        });
+        showToast('🔕 Ocultado da Análise', `'${cleanPattern}' foi adicionado à Blacklist!`, 'success');
+        
+        renderBlacklistItems();
+        
+        if (typeof runAnalysis === 'function') {
+          runAnalysis();
+        } else {
+          applyFilters();
+        }
+      } catch (err) {
+        console.error('Failed to update impact_blacklist:', err);
+        showToast('❌ Erro', 'Não foi possível salvar a regra de blacklist.', 'danger');
+      }
+    }
+
+    async function removeFromImpactBlacklist(pattern) {
+      if (!userNotificationSettings.impact_blacklist) return;
+      userNotificationSettings.impact_blacklist = userNotificationSettings.impact_blacklist.filter(item => item !== pattern);
+
+      try {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ impact_blacklist: userNotificationSettings.impact_blacklist })
+        });
+        showToast('🗑️ Removido da Blacklist', `'${pattern}' visível novamente!`, 'info');
+        renderBlacklistItems();
+        if (typeof runAnalysis === 'function') {
+          runAnalysis();
+        }
+      } catch (err) {
+        console.error('Failed to remove from impact_blacklist:', err);
+      }
+    }
+
+    function addBlacklistItemFromInput() {
+      const input = document.getElementById('blacklistInput');
+      if (!input) return;
+      const val = input.value.trim();
+      if (!val) return;
+      addToImpactBlacklist(val, val.endsWith('/'));
+      input.value = '';
     }
 
     async function changeTheme(themeName) {
