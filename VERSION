@@ -1,3 +1,7 @@
+[1.4.5] - 03/09/2026
+- Adicionada opção de escopo e botão dedicado `🌿 Rodar nas Fora da Master` no Test Runner.
+- Identifica dinamicamente todas as engines que estão em branchs ativas de funcionalidade ou testes (diferentes de `master` ou `main`) e executa suítes RSpec ou Bitbucket Pipelines nelas em paralelo.
+
 [1.4.4] - 03/09/2026
 - Adicionado o executor local de Bitbucket Pipelines (`src/pipeline_runner.py`): parser dinâmico do `bitbucket-pipelines.yml` para engines backend.
 - Suporte a execução de suítes de testes unitários RSpec e análise de qualidade de código com RuboCop (`bundle exec rubocop`) com streaming de logs em tempo real.

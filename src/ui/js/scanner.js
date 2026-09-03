@@ -216,6 +216,42 @@ function getAllEngineNames() {
   return [];
 }
 
+function getNonMasterEngineObjects() {
+  if (typeof allEnginesData !== 'undefined' && Array.isArray(allEnginesData) && allEnginesData.length > 0) {
+    return allEnginesData.filter(eng => {
+      const isRails = eng.type === 'Rails Engine' || !eng.type;
+      const branch = eng.git && eng.git.branch ? eng.git.branch.toLowerCase().trim() : '';
+      const isNonMaster = branch && branch !== 'master' && branch !== 'main' && branch !== 'n/a' && branch !== 'unknown';
+      return isRails && isNonMaster;
+    });
+  }
+  return [];
+}
+
+function runNonMasterEnginesTests() {
+  const nonMasterEngines = getNonMasterEngineObjects();
+  if (nonMasterEngines.length === 0) {
+    alert('Nenhuma engine foi encontrada em uma branch diferente de master/main no momento.');
+    return;
+  }
+
+  let scope = document.getElementById('specScopeSelect').value;
+  const actualScope = (scope === 'all_engines' || scope === 'non_master_engines' || scope === 'impacted_only') ? 'all' : scope;
+  const engineDetails = nonMasterEngines.map(e => `${e.name} [${e.git.branch}]`).join(', ');
+
+  const reqs = nonMasterEngines.map(eng => ({
+    engine: eng.name,
+    scope: actualScope,
+    spec_files: null
+  }));
+
+  if (typeof showToast === 'function') {
+    showToast('🌿 Testes em Branches Ativas', `Iniciando testes nas ${nonMasterEngines.length} engine(s) fora da master: ${engineDetails}`, 'info');
+  }
+
+  executeTests(reqs);
+}
+
 function runAllEnginesTests() {
   const engineNames = getAllEngineNames();
   if (engineNames.length === 0) {
@@ -224,7 +260,7 @@ function runAllEnginesTests() {
   }
 
   let scope = document.getElementById('specScopeSelect').value;
-  const actualScope = (scope === 'all_engines' || scope === 'impacted_only') ? 'all' : scope;
+  const actualScope = (scope === 'all_engines' || scope === 'non_master_engines' || scope === 'impacted_only') ? 'all' : scope;
 
   const reqs = engineNames.map(engName => ({
     engine: engName,
@@ -244,6 +280,9 @@ function runSourceEngineTest() {
   if (scope === 'all_engines') {
     runAllEnginesTests();
     return;
+  } else if (scope === 'non_master_engines') {
+    runNonMasterEnginesTests();
+    return;
   }
 
   const sourceEngine = document.getElementById('engineSelect').value;
@@ -258,6 +297,9 @@ function runSelectedEngineTests() {
 
   if (scope === 'all_engines') {
     runAllEnginesTests();
+    return;
+  } else if (scope === 'non_master_engines') {
+    runNonMasterEnginesTests();
     return;
   }
 
@@ -406,6 +448,8 @@ async function runBitbucketPipeline() {
 
   if (scope === 'all_engines') {
     targetEngines = getAllEngineNames();
+  } else if (scope === 'non_master_engines') {
+    targetEngines = getNonMasterEngineObjects().map(e => e.name);
   } else {
     const sourceEngine = document.getElementById('engineSelect').value;
     const checkedBoxes = document.querySelectorAll('.test-engine-checkbox:checked');

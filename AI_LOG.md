@@ -6,6 +6,13 @@ This document tracks AI-assisted session changes, architectural decisions, and v
 
 ## 📌 Version History & Session Log
 
+### [v1.4.5] - 2026-09-03
+- **Context & Problem:**
+  Developers working on multi-engine features (e.g. `admin`, `accounting`, `fiscal` set to feature/testing branches like `teste`) needed a quick way to execute tests across all modules currently on active feature branches (anything other than `master` or `main`).
+- **Changes Made:**
+  1. **UI Controls (`test_runner.html`):** Added option `🌿 Engines Fora da Master (Branch de Feature/Teste)` to the `specScopeSelect` dropdown and added button `🌿 Rodar nas Fora da Master`.
+  2. **Non-Master Engine Discovery (`scanner.js`):** Added `getNonMasterEngineObjects()` to inspect active Git branches returned by `EngineScanner` and `runNonMasterEnginesTests()` to trigger parallel test suite or Bitbucket pipeline executions on only non-master modules.
+
 ### [v1.4.4] - 2026-09-03
 - **Context & Problem:**
   Developers needed a way to execute the entire Bitbucket CI pipeline locally (including all RSpec test suites and RuboCop code quality / linting checks) before committing or submitting code for pull request review.

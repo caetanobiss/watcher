@@ -31,6 +31,7 @@
           <option value="requests">🌐 Apenas Requests / API (spec/requests)</option>
           <option value="all">💯 Suíte Completa da Engine (spec)</option>
           <option value="all_engines">🔥 TODAS as Engines (Paralelo Total no Monorepo)</option>
+          <option value="non_master_engines">🌿 Engines Fora da Master (Branch de Feature/Teste)</option>
         </select>
       </div>
 
@@ -45,6 +46,10 @@
     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
       <button id="runSelectedTestsBtn" class="btn-secondary" style="background: linear-gradient(135deg, #1f6beb, #238636); color: #fff; border: none;" onclick="runSelectedEngineTests()">
         <span>⚡ Rodar Selecionados</span>
+      </button>
+
+      <button id="runNonMasterEnginesBtn" class="btn-secondary" style="background: linear-gradient(135deg, #2ea043, #1f6beb); color: #fff; border: none; font-weight: 600;" onclick="runNonMasterEnginesTests()" title="Executar testes apenas nas engines que estão em branchs ativas de feature/teste (não-master)">
+        <span>🌿 Rodar nas Fora da Master</span>
       </button>
 
       <button id="runAllEnginesBtn" class="btn-secondary" style="background: linear-gradient(135deg, #8957e5, #da3633); color: #fff; border: none; font-weight: 600;" onclick="runAllEnginesTests()" title="Executar testes em todas as engines simultaneamente em paralelo">
