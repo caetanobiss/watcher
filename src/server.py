@@ -12,6 +12,7 @@ from src.entity_parser import EntityParser
 from src.impact_tracer import ImpactTracer
 from src.risk_evaluator import RiskEvaluator
 from src.test_runner import TestRunner
+from src.pipeline_runner import PipelineRunner
 
 SETTINGS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "settings.json")
 
@@ -47,6 +48,7 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
     tracer = ImpactTracer()
     evaluator = RiskEvaluator()
     test_runner = TestRunner()
+    pipeline_runner = PipelineRunner()
 
     @classmethod
     def refresh_config(cls):
@@ -56,6 +58,7 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
         cls.tracer = ImpactTracer()
         cls.evaluator = RiskEvaluator()
         cls.test_runner = TestRunner()
+        cls.pipeline_runner = PipelineRunner()
 
     def do_GET(self):
         parsed_url = urllib.parse.urlparse(self.path)
@@ -66,6 +69,10 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
             self._serve_ui()
         elif path == "/api/engines":
             self._handle_get_engines()
+        elif path == "/api/pipeline/inspect":
+            engine = query_params.get("engine", ["stock"])[0]
+            cfg = self.pipeline_runner.parse_pipeline_config(engine)
+            self._send_json({"status": "success", "pipeline": cfg})
         elif path == "/api/diff":
             engine = query_params.get("engine", ["stock"])[0]
             target = query_params.get("target", ["working"])[0]
@@ -194,6 +201,17 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
         elif path == "/api/cancel-tests":
             self.test_runner.cancel_all_tests()
             self._send_json({"status": "success", "message": "Tests cancelled"})
+        elif path == "/api/run-pipeline-stream":
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            try:
+                body = json.loads(post_data.decode('utf-8'))
+            except Exception:
+                body = {}
+            self._handle_run_pipeline_stream(body)
+        elif path == "/api/cancel-pipeline":
+            self.pipeline_runner.cancel_all_pipelines()
+            self._send_json({"status": "success", "message": "Pipeline cancelled"})
         elif path == "/api/settings":
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
@@ -372,6 +390,37 @@ class WatcherHTTPHandler(BaseHTTPRequestHandler):
         try:
             results = self.test_runner.run_parallel_tests_stream(engines_req, progress_callback=send_sse, max_workers=4)
             send_sse({"type": "complete", "results": results})
+        except Exception as e:
+            send_sse({"type": "error", "message": str(e)})
+
+    def _handle_run_pipeline_stream(self, body: Dict[str, Any]):
+        engines_req = body.get("engines", [])
+        if not engines_req:
+            self._send_json({"status": "error", "message": "Nenhum módulo selecionado para execução de pipeline."}, status=400)
+            return
+
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "keep-alive")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+
+        def send_sse(data_dict):
+            if self.pipeline_runner.is_cancelled:
+                return
+            try:
+                payload = f"data: {json.dumps(data_dict)}\n\n".encode('utf-8')
+                self.wfile.write(payload)
+                self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError, OSError):
+                self.pipeline_runner.cancel_all_pipelines()
+            except Exception:
+                pass
+
+        try:
+            results = self.pipeline_runner.run_parallel_pipelines_stream(engines_req, progress_callback=send_sse, max_workers=4)
+            send_sse({"type": "pipeline_all_complete", "results": results})
         except Exception as e:
             send_sse({"type": "error", "message": str(e)})
 

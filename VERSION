@@ -1,3 +1,8 @@
+[1.4.4] - 03/09/2026
+- Adicionado o executor local de Bitbucket Pipelines (`src/pipeline_runner.py`): parser dinâmico do `bitbucket-pipelines.yml` para engines backend.
+- Suporte a execução de suítes de testes unitários RSpec e análise de qualidade de código com RuboCop (`bundle exec rubocop`) com streaming de logs em tempo real.
+- Botão dedicado na UI `🚀 Executar Pipeline (RSpec + RuboCop)` com visualização unificada de ofensas do RuboCop e falhas do RSpec.
+
 [1.4.3] - 02/09/2026
 - Refatoração completa e componentização da interface do usuário (UI): redução do `index.html` de 1.800+ linhas para 48 linhas de esqueleto semântico.
 - Separação da marcação em componentes HTML modulares documentados em `src/ui/components/` (`header.html`, `overview_grid.html`, `impact_list.html`, `test_runner.html`, e modais sob `components/modals/`).

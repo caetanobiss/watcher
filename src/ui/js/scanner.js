@@ -399,3 +399,98 @@ async function executeTests(engineRequests) {
     activeTestAbortController = null;
   }
 }
+
+async function runBitbucketPipeline() {
+  const scope = document.getElementById('specScopeSelect').value;
+  let targetEngines = [];
+
+  if (scope === 'all_engines') {
+    targetEngines = getAllEngineNames();
+  } else {
+    const sourceEngine = document.getElementById('engineSelect').value;
+    const checkedBoxes = document.querySelectorAll('.test-engine-checkbox:checked');
+    if (sourceEngine) targetEngines.push(sourceEngine);
+    checkedBoxes.forEach(box => {
+      if (!targetEngines.includes(box.value)) targetEngines.push(box.value);
+    });
+  }
+
+  if (targetEngines.length === 0) {
+    alert('Selecione ao menos um módulo para executar a pipeline.');
+    return;
+  }
+
+  const container = document.getElementById('testResultsContainer');
+  const tabsHeader = document.getElementById('testTabsHeader');
+  const tabContent = document.getElementById('testTabContent');
+
+  container.style.display = 'flex';
+  tabsHeader.innerHTML = '<div style="color: var(--accent-purple); padding: 0.5rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 600;"><span class="spinner"></span> Executando Bitbucket Pipeline (RSpec + RuboCop)...</div>';
+  tabContent.innerHTML = getScannerWidgetHTML('Watcher executando Bitbucket Pipeline...', true);
+
+  setScannerLoading(true);
+  if (typeof showToast === 'function') {
+    showToast('🚀 Bitbucket Pipeline', `Iniciando suíte completa (RSpec + RuboCop) para ${targetEngines.length} engine(s)...`, 'info');
+  }
+
+  activeTestAbortController = new AbortController();
+
+  try {
+    const response = await fetch('/api/run-pipeline-stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ engines: targetEngines }),
+      signal: activeTestAbortController.signal
+    });
+
+    if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let pipelineResults = {};
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const chunks = buffer.split('\n\n');
+      buffer = chunks.pop();
+
+      for (const chunk of chunks) {
+        for (const rawLine of chunk.split('\n')) {
+          const line = rawLine.trim();
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.type === 'pipeline_log') {
+                const liveLogText = document.getElementById('scannerLiveLogText');
+                if (liveLogText) {
+                  liveLogText.textContent = `► [${data.engine}] [${data.step_name}] ${data.line}`;
+                }
+              } else if (data.type === 'pipeline_complete') {
+                pipelineResults[data.engine] = data.result;
+              } else if (data.type === 'pipeline_all_complete') {
+                if (data.results) pipelineResults = data.results;
+              }
+            } catch (e) {
+              console.error('Error parsing SSE pipeline chunk:', e);
+            }
+          }
+        }
+      }
+    }
+
+    if (typeof renderPipelineResultsTabs === 'function') {
+      renderPipelineResultsTabs(pipelineResults);
+    }
+
+  } catch (err) {
+    if (err.name === 'AbortError') return;
+    tabsHeader.innerHTML = '<div style="color: var(--accent-red);">Falha na requisição da pipeline.</div>';
+    tabContent.innerHTML = `<div style="color: var(--accent-red); padding: 1.5rem;">${typeof escapeHtml === 'function' ? escapeHtml(err.message) : err.message}</div>`;
+  } finally {
+    setScannerLoading(false);
+    activeTestAbortController = null;
+  }
+}

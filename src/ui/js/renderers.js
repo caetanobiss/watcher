@@ -341,3 +341,97 @@ function formatRspecTerminal(text) {
     .replace(/(FAILED|Failure\/Error:|rspec \.\/spec[^\n]*)/g, '<span style="color: #f85149; font-weight: 700;">$1</span>')
     .replace(/(Finished in [^\n]*)/g, '<span style="color: #58a6ff;">$1</span>');
 }
+
+function renderPipelineResultsTabs(results) {
+  currentTestResults = results;
+  const tabsHeader = document.getElementById('testTabsHeader');
+  tabsHeader.innerHTML = '';
+
+  const engines = Object.keys(results || {});
+  if (engines.length === 0) {
+    tabsHeader.innerHTML = '<div style="color: var(--text-muted);">Nenhum resultado de pipeline retornado.</div>';
+    return;
+  }
+
+  engines.forEach((eng, idx) => {
+    const res = results[eng];
+    const tabBtn = document.createElement('button');
+    tabBtn.className = `btn-secondary ${idx === 0 ? 'active' : ''}`;
+    tabBtn.style.borderRadius = '6px';
+    tabBtn.style.padding = '0.4rem 0.8rem';
+    tabBtn.style.fontSize = '0.85rem';
+    
+    let statusBadge = '🟢 PIPELINE PASSED';
+    if (res.status === 'failed') statusBadge = '🔴 PIPELINE FAILED';
+    else if (res.status === 'cancelled') statusBadge = '🛑 CANCELLED';
+
+    tabBtn.innerHTML = `<strong>🚀 ${eng}</strong> <span style="font-size: 0.75rem; opacity: 0.9;">(${statusBadge})</span>`;
+    tabBtn.onclick = () => switchPipelineTab(eng);
+    tabBtn.id = `testTab_${eng}`;
+    tabsHeader.appendChild(tabBtn);
+  });
+
+  switchPipelineTab(engines[0]);
+}
+
+function switchPipelineTab(eng) {
+  const results = currentTestResults || {};
+  const res = results[eng];
+
+  document.querySelectorAll('#testTabsHeader button').forEach(b => b.classList.remove('active'));
+  const activeBtn = document.getElementById(`testTab_${eng}`);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  const tabContent = document.getElementById('testTabContent');
+  if (!res) {
+    tabContent.innerHTML = 'Sem dados de pipeline para este módulo.';
+    return;
+  }
+
+  let html = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.75rem;">`;
+  html += `<div><span style="font-size: 1.1rem; font-weight: 700; color: var(--text-bright);">🚀 Pipeline: ${eng}</span> <span style="color: var(--text-muted); font-size: 0.85rem; margin-left: 0.5rem;">(${res.duration || 'N/A'})</span></div>`;
+  
+  let badgeStyle = 'background: rgba(63, 185, 80, 0.2); color: var(--accent-green);';
+  if (res.status === 'failed') badgeStyle = 'background: rgba(248, 81, 73, 0.2); color: var(--accent-red);';
+
+  html += `<div style="padding: 0.3rem 0.8rem; border-radius: 6px; font-weight: 700; font-size: 0.85rem; ${badgeStyle}">${(res.status || 'unknown').toUpperCase()} | ${res.total_steps || 0} Etapas Executadas</div>`;
+  html += `</div>`;
+
+  const stepResults = res.step_results || [];
+  stepResults.forEach(step => {
+    const isRuboCop = step.step_type === 'rubocop';
+    const stepPassed = step.status === 'passed';
+    const statusIcon = stepPassed ? '🟢' : '🔴';
+    const stepHeaderBg = stepPassed ? 'rgba(63, 185, 80, 0.08)' : 'rgba(248, 81, 73, 0.08)';
+
+    html += `<div style="border: 1px solid var(--panel-border); border-radius: 8px; margin-bottom: 1rem; overflow: hidden;">`;
+    html += `<div style="background: ${stepHeaderBg}; padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--panel-border);">`;
+    html += `<div style="font-weight: 700; color: var(--text-bright); font-size: 0.95rem;">${statusIcon} ${escapeHtml(step.step_name)} <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-left: 0.5rem;">(${step.step_type})</span></div>`;
+
+    if (isRuboCop) {
+      const summary = step.summary || {};
+      html += `<div style="font-size: 0.85rem; font-weight: 600; color: ${summary.offenses_count > 0 ? 'var(--accent-red)' : 'var(--accent-green)'};">🔍 ${summary.files_inspected || 0} arquivos inspecionados, ${summary.offenses_count || 0} ofensas</div>`;
+    } else {
+      const summary = step.summary || {};
+      html += `<div style="font-size: 0.85rem; font-weight: 600; color: ${summary.failures_count > 0 ? 'var(--accent-red)' : 'var(--accent-green)'};">🧪 ${summary.total_examples || 0} exemplos, ${summary.failures_count || 0} falhas</div>`;
+    }
+
+    html += `</div>`;
+
+    html += `<div style="font-size: 0.8rem; line-height: 1.4; color: #c9d1d9; max-height: 300px; overflow-y: auto; background: #000; padding: 1rem; white-space: pre-wrap; font-family: var(--font-mono);">`;
+    html += formatPipelineTerminal(escapeHtml(step.output || 'Sem saída de terminal para esta etapa.'));
+    html += `</div>`;
+    html += `</div>`;
+  });
+
+  tabContent.innerHTML = html;
+}
+
+function formatPipelineTerminal(text) {
+  return text
+    .replace(/(\d+ files? inspected, no offenses detected)/g, '<span style="color: #3fb950; font-weight: 700;">$1</span>')
+    .replace(/(\d+ files? inspected, \d+ offenses? detected)/g, '<span style="color: #f85149; font-weight: 700;">$1</span>')
+    .replace(/(Convention:|Warning:|Error:)/g, '<span style="color: #e3b341; font-weight: 700;">$1</span>')
+    .replace(/(\d+ examples?, \d+ failures?[^\n]*)/g, '<span style="color: #3fb950; font-weight: 700;">$1</span>')
+    .replace(/(FAILED|Failure\/Error:|rspec \.\/spec[^\n]*)/g, '<span style="color: #f85149; font-weight: 700;">$1</span>');
+}

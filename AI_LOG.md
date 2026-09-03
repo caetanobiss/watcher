@@ -6,6 +6,14 @@ This document tracks AI-assisted session changes, architectural decisions, and v
 
 ## 📌 Version History & Session Log
 
+### [v1.4.4] - 2026-09-03
+- **Context & Problem:**
+  Developers needed a way to execute the entire Bitbucket CI pipeline locally (including all RSpec test suites and RuboCop code quality / linting checks) before committing or submitting code for pull request review.
+- **Changes Made:**
+  1. **Pipeline Runner Module (`src/pipeline_runner.py`):** Parses `bitbucket-pipelines.yml` dynamically for any engine, extracts test & lint steps, filters out slow CI setup commands (`gem install`, `bundle install`, `rails db:test:prepare`), and executes `bundle exec rspec` and `bundle exec rubocop` locally.
+  2. **Server Endpoints (`src/server.py`):** Added `/api/pipeline/inspect`, `/api/run-pipeline-stream` (SSE), and `/api/cancel-pipeline`.
+  3. **UI Integration (`test_runner.html`, `scanner.js`, `renderers.js`):** Added button `🚀 Executar Pipeline (RSpec + RuboCop)`, streaming progress indicator, and formatted tab output highlighting RuboCop offenses (`Convention`, `Warning`, `Error`) alongside RSpec test results.
+
 ### [v1.4.3] - 2026-09-02
 - **Context & Problem:**
   `src/ui/index.html` grew into an unmaintainable monolithic file containing 1,800+ lines of mixed HTML markup and inline JavaScript functions, making code maintenance and future feature development difficult and error-prone.
